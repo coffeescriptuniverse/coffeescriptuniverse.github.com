@@ -1,6 +1,7 @@
 div#leanpub-toc {
   width: 300px;
   float: left;
+	opacity: 0%;
 }
 
 div#leanpub-main {
