@@ -1,7 +1,7 @@
 div#leanpub-toc {
   width: 300px;
   float: left;
-	opacity: 0%;
+	opacity: 100%;
 }
 
 div#leanpub-main {
@@ -14,7 +14,7 @@ div#leanpub-main {
 
 .toc {
   list-style: none;
-	opacity: 0%;
+	opacity: 100%;
 }
 .toc li {
   list-style: none;
