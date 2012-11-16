@@ -14,6 +14,7 @@ div#leanpub-main {
 
 .toc {
   list-style: none;
+	opacity: 0%;
 }
 .toc li {
   list-style: none;
