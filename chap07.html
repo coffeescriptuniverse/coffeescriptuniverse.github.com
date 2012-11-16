@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>A Golden Crema</title>
+<link href="stylesheet.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+<div id="leanpub-main">
+<h2 id="a-golden-crema">A Golden Crema</h2>
+
+<div class="image-with-caption">
+  <p><img src="images/la_marzocco.jpg" alt="You've earned a break!" /></p><p>You've earned a break!</p>
+</div>
+
+<div class="page-break"></div>
+<h3 id="online">How to run the examples</h3>
+
+<p>If you follow the instructions at <a href="http://coffeescript.org/#installation" title="Install CoffeeScript">coffeescript.org</a> to install NodeJS and CoffeeScript,<sup id="fnref-whoa"><a href="chap07.html#fn-whoa" rel="footnote">27</a></sup> you can run an interactive CoffeeScript <a href="https://en.wikipedia.org/wiki/REPL" title="Read&#xE2;&#x20AC;&#x201C;eval&#xE2;&#x20AC;&#x201C;print loop">REPL</a> on your command line simply by typing <code>coffee</code>. This is how the examples in this book were tested, and what many programmers will do. When running CoffeeScript on the command line, ctrl-V switches between single-line and multi-line input mode. If you need to enter more than one line of code, be sure to enter multi-line mode.</p>
+
+<p>Some websites function as online <a href="https://en.wikipedia.org/wiki/REPL" title="Read&#xE2;&#x20AC;&#x201C;eval&#xE2;&#x20AC;&#x201C;print loop">REPLs</a>, allowing you to type CoffeeScript programs right within a web page and see the results (as well as a translation from CoffeeScript to JavaScript). The examples in this book have all been tested on <a href="http://coffeescript.org/#try:">coffeescript.org</a>. You simply type a CoffeeScript expression into the blank window and you will see its JavaScript translation live. Clicking &#x201C;Run&#x201D; evaluates the expression in the browser.</p>
+
+<p>To actually see the result of your expressions, you&#x2019;ll need to either include a call to <code>console.log</code> (and be using a browser that supports console logging) or you could go old-school and use <code>alert</code>, e.g. <code>alert 2+2</code> will cause the alert box to be displayed with the message <code>4</code>.</p>
+
+<div class="page-break"></div>
+<div class="page-break"></div>
+<h3 id="thanks">Thanks!</h3>
+
+<div class="image-with-caption">
+  <p><img src="images/little-schemer.jpg" alt="The Little Schemer" /></p><p>The Little Schemer</p>
+</div>
+
+<p><em>CoffeeScript Ristretto</em> was inspired by <a href="http://www.amzn.com/0262560992?tag=raganwald001-20">The Little Schemer</a> by Daniel Friedman and Matthias Felleisen. But where <em>The Little Schemer&#x2019;s</em> primary focus is recursion, <em>CoffeeScript Ristretto&#x2019;s</em> primary focus is <strong>functions as first-class values</strong>.</p>
+
+<div class="page-break"></div>
+<div class="image-with-caption">
+  <p><img src="images/qed.jpg" alt="QED: The Strange Theory of Light and Matter" /></p><p>QED: The Strange Theory of Light and Matter</p>
+</div>
+
+<p>Richard Feynman&#x2019;s <a href="http://www.amzn.com/0691125759?tag=raganwald001-20">QED</a> was another inspiration: A book that explains Quantum Electrodynamics and the &#x201C;Sum of the Histories&#x201D; methodology using the simple expedient of explaining how light reflects off a mirror, and showing how most of the things we think are happening&#x2013;such as light travelling on a straight line,  the angle of reflection equalling the angle of refraction, or that a beam of light only interacts with a small portion of the mirror, or that it reflects off a plane&#x2013;are all wrong. And everything is explained in simple, concise terms that build upon each other logically.</p>
+
+<div class="page-break"></div>
+<div class="image-with-caption">
+  <p><img src="images/mock.jpg" alt="To Mock a Mockingbird and other logic puzzles" /></p><p>To Mock a Mockingbird and other logic puzzles</p>
+</div>
+
+<p>And of course, <a href="http://www.amzn.com/0192801422?tag=raganwald001-20" title="To Mock a Mockingbird">To Mock a Mockingbird</a> by Raymond Smullyan. I have no words to describe the delight of venturing into a forest of songbirds and emerging with an understanding of Kestrels, Starlings, the Idiot Bird, Sage Birds, and ending with an understanding of Combinatory Logic.</p>
+
+<h3 id="copyright-notice">Copyright Notice</h3>
+
+<p>The original words in this book are (c) 2012, Reginald Braithwaite. All rights reserved.</p>
+
+<h4 id="images">images</h4>
+
+<ul><li>The picture of the author is (c) 2008, <a href="http://www.flickr.com/photos/trumpetca/">Joseph Hurtado</a>, All Rights Reserved. </li>
+  <li><a href="http://www.flickr.com/photos/digitalcolony/5054568279/">Double ristretto menu</a> (c) 2010, Michael Allen Smith. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/everydaylifemodern/1353570874/">Short espresso shot in a white cup with blunt handle</a> (c) 2007, EVERYDAYLIFEMODERN. <a href="http://creativecommons.org/licenses/by-nd/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/everydaylifemodern/434299813/">Espresso shot in a caffe molinari cup</a> (c) 2007, EVERYDAYLIFEMODERN. <a href="http://creativecommons.org/licenses/by-nd/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/the_rev/2295096211/">Beans in a Bag</a> (c) 2008, Stirling Noyes. <a href="http://creativecommons.org/licenses/by/2.0/deed.en">Some Rights Reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/thedigitelmyr/6199419022/">Free Samples</a> (c) 2011, Myrtle Bech Digitel. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some Rights Reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/sagamiono/4391542823/">Free Coffees</a> image (c) 2010, Michael Francis McCarthy. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some Rights Reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/digitalcolony/3924227011/">La Marzocco</a> (c) 2009, Michael Allen Smith. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/15481483@N06/6231443466/">Cafe Diplomatico</a> (c) 2011, Missi. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/tjgfernandes/2785677276/">Sugar Service</a> (c) 2008 Tiago Fernandes. <a href="http://creativecommons.org/licenses/by/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/kirstenloza/4805716699/">Biscotti on a Rack</a> (c) 2010 Kirsten Loza. <a href="http://creativecommons.org/licenses/by/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/jenny-pics/5053954146/">Coffee Spoons</a> (c) 2010 Jenny Downing. <a href="http://creativecommons.org/licenses/by/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/33388953@N04/4017985434/">Drawing a Doppio</a> (c) 2008 Osman Bas. <a href="http://creativecommons.org/licenses/by/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/tangysd/5953453156/">Cupping Coffees</a> (c) 2011 Dennis Tang. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/digitalcolony/4000837035/">Three Coffee Roasters</a> (c) 2009 Michael Allen Smith. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/digitalcolony/4309812256/">Blue Diedrich Roaster</a> (c) 2010 Michael Allen Smith. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/bike/3237859728/">Red Diedrich Roaster</a> (c) 2009 Richard Masoner. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/lacerabbit/2102801319/">Roaster with Tree Leaves</a> (c) 2007 ting. <a href="http://creativecommons.org/licenses/by-nd/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/nalundgaard/4785922266/">Half Drunk</a> (c) 2010 Nicholas Lundgaard. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/paulmccoubrie/6828131856/">Anticipation</a> (c) 2012 Paul McCoubrie. <a href="http://creativecommons.org/licenses/by-nd/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/mikecogh/7676649034/">Ooh!</a> (c) 2012 Michael Coghlan. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/yellowskyphotography/5641003165/">Intestines of an Espresso Machine</a> (c) 2011 Angie Chung. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/andynash/6204253236/">Bezzera Espresso Machine</a> (c) 2011 Andrew Nash. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.
+*<a href="http://www.flickr.com/photos/28705377@N04/5306009552/">Beans Ripening on a Branch</a> (c) 2008 John Pavelka. <a href="http://creativecommons.org/licenses/by/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/shavejonathan/2343081208/">Cafe Macchiato on Gazotta Della Sport</a> (c) 2008 Jon Shave. <a href="http://creativecommons.org/licenses/by/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/ilovememphis/7103931235/">Jars of Coffee Beans</a> (c) 2012 Memphis CVB. <a href="http://creativecommons.org/licenses/by-nd/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/mikecogh/7561440544/">Types of Coffee Drinks</a> (c) 2012 Michael Coghlan. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/dtownsend/6171015997/">Coffee Trees</a> (c) 2011 Dave Townsend. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/93425126@N00/313053257/">Cafe do Brasil</a> (c) 2003 Temporalata. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/digitalcolony/2833809436/">Brown Cups</a> (c) 2007 Michael Allen Smith. <a href="http://creativecommons.org/licenses/by-sa/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/citizenhelder/5006498068/">Mirage</a> (c) 2010 Mira Helder. <a href="http://creativecommons.org/licenses/by/2.0/deed.en">Some rights reserved</a>.</li>
+  <li><a href="http://www.flickr.com/photos/joncrel/237026246/">Coffee Van with Bullet Holes</a> (c) 2006 Jon Crel. <a href="http://creativecommons.org/licenses/by-nd/2.0/deed.en">Some rights reserved</a>.</li>
+</ul><div class="page-break"></div>
+<h3 id="about-the-author">About The Author</h3>
+
+<p>When he&#x2019;s not shipping CoffeeScript, Ruby, JavaScript and Java applications scaling out to millions of users, Reg &#x201C;Raganwald&#x201D; Braithwaite has authored <a href="http://github.com/raganwald">libraries</a> for CoffeeScript, JavaScript and Ruby programming such as Method Combinators, Katy, JQuery Combinators, YouAreDaChef, andand, and others.</p>
+
+<p>He writes about programming on his &#x201C;<a href="http://github.com/raganwald/homoiconic">Homoiconic</a>&#x201D; un-blog as well as general-purpose ruminations on his <a href="http://raganwald.posterous.com">posterous space</a>. He is also known for authoring the popular <a href="http://weblog.raganwald.com">raganwald programming blog</a> from 2005-2008.</p>
+
+<h4 id="contact">contact</h4>
+
+<p>Twitter: <a href="https://twitter.com/raganwald">@raganwald</a><br />
+Email: <a href="mailto:reg@braythwayt.com">reg@braythwayt.com</a></p>
+
+<div class="image-with-caption">
+  <p><img src="images/reg2.jpg" alt="Reg &quot;Raganwald&quot; Braithwaite " /></p><p>Reg "Raganwald" Braithwaite </p>
+</div>
+
+<div class="footnotes">
+  <ol><li id="fn-representation">Technically, it&#x2019;s a <em>representation</em> of a value using Base10 notation, but we needn&#x2019;t worry about that in this book. You and I both understand that this means &#x201C;42,&#x201D; and so does the computer.<a href="chap01.html#fnref-representation" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-homoiconicity">In some languages, expressions are a kind of value unto themselves and can be manipulated. The grandfather of such languages is Lisp. CoffeeScript is not such a language, expressions in and of themselves are not values.<a href="chap01.html#fnref-homoiconicity" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-also">If you have dabbled in CoffeeScript or look at other people&#x2019;s CoffeeScript programs, you may discover that the <code>()</code> is optional, so this function could also be written <code>() -&gt;</code>. In this book, we&#x2019;re trying to focus on concepts which add greatly to your understanding of programming in CoffeeScript, so we&#x2019;ll often skip over options like this that can make a program easier on the eyes but don&#x2019;t provide a building block for further learning. We&#x2019;ll just assume that if you don&#x2019;t already know it, you&#x2019;ll pick it up quickly enough from free sources such as the online documentation.<a href="chap02.html#fnref-also" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-circular">The exact same thing will happen to you once you figure out how to make an array that contains itself. You&#x2019;ll try to print it out and you&#x2019;ll get <code>[[Circular]]</code> back. Never mind, internally CoffeeScript has constructed a perfectly fine Ouroborian array even if it won&#x2019;t try to print it out for you.<a href="chap02.html#fnref-circular" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-ambiguous">If you&#x2019;re used to other programming languages, you&#x2019;ve probably internalized the idea that sometimes parentheses are used to group operations in an expression like math, and sometimes to apply a function to arguments. If not&#x2026; Welcome to the <a href="https://en.wikipedia.org/wiki/ALGOL">ALGOL</a> family of programming languages!<a href="chap02.html#fnref-ambiguous" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-mp"><a href="http://www.mindspring.com/~mfpatton/sketch.htm">The Argument Sketch</a> from &#x201C;Monty Python&#x2019;s Previous Record&#x201D; and &#x201C;Monty Python&#x2019;s Instant Record Collection&#x201D;<a href="chap02.html#fnref-mp" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-f2f">We said that you can&#x2019;t apply a function to an expression. You <em>can</em> apply a function to one or more functions. Functions are values! This has interesting applications, and they will be explored much more thoroughly in <a href="#consumers">Functions That Are Applied to Functions</a>.<a href="chap02.html#fnref-f2f" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-nonlocal">You may also hear the term &#x201C;non-local variable.&#x201D; <a href="https://en.wikipedia.org/wiki/Free_variables_and_bound_variables">Both are correct.</a> <a href="chap02.html#fnref-nonlocal" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-let"><code>let</code> has made its way into other languages like JavaScript.<a href="chap03.html#fnref-let" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-letrec"><code>let</code> is limited in some ways. For example, you can&#x2019;t define a recursive function without some fixed point combinator backflips. This will be discussed later when we look at the related pattern <a href="chap04.html#letrec"><code>letrec</code></a>.<a href="chap03.html#fnref-letrec" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-ssugar">&#x201C;Syntactic sugar causes cancer of the semicolon&#x201D;&#x2013;<a href="http://www.cs.yale.edu/quotes.html" title="Epigrams in Programming">Alan Perlis</a><a href="chap03.html#fnref-ssugar" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-poco">Tradition would have us call objects that don&#x2019;t contain any functions &#x201C;POCOs,&#x201D; meaning Plain Old CoffeeScript Objects. Given that <em>poco a poco</em> means &#x201C;little by little&#x201D; in musical notation, I&#x2019;m tempted to go along with that.<a href="chap03.html#fnref-poco" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-y">You may also find <a href="https://en.wikipedia.org/wiki/Fixed-point_combinator">fixed point combinators</a> interesting.<a href="chap04.html#fnref-y" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-worse">It could be worse. One very popular language assumes that if you haven&#x2019;t otherwise declared a variable local to a function, you must want a global variable that may clobber an existing global variable used by any piece of code in any file or module.<a href="chap04.html#fnref-worse" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-encapsulation">&#x201C;A language construct that facilitates the bundling of data with the methods (or other functions) operating on that data.&#x201D;&#x2013;<a href="https://en.wikipedia.org/wiki/Encapsulation_" title="object-oriented_programming">Wikipedia</a><a href="chap04.html#fnref-encapsulation" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-length">Yes, there&#x2019;s another way to track the size of the array, but we don&#x2019;t need it to demonstrate encapsulation and hiding of state.<a href="chap04.html#fnref-length" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-refactoring">And when you take an already factored component and rearrange things so that it is factored into a different set of subcomponents without altering its behaviour, you are <em>refactoring</em>.<a href="chap04.html#fnref-refactoring" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-wasa">Before you start wondering whether a deque is-a queue, we said nothing about types and classes. This relationship is called was-a, or &#x201C;implemented in terms of a.&#x201D;<a href="chap04.html#fnref-wasa" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-this">CoffeeScript also does other things with <code>this</code> as well, but this is all we care about right now.<a href="chap04.html#fnref-this" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-turing">Since the CoffeeScript that we have presented so far is <a href="https://en.wikipedia.org/wiki/Turing_completeness" title="Computational Universality and Turing Completeness">computationally universal</a>, it is possible to perform any calculation with its existing feature set, including emulating any other programming language. Therefore, it is not theoretically necessary to have any further language features; If we need macros, continuations, generic functions, static typing, or anything else, we can <a href="https://en.wikipedia.org/wiki/Greenspun%27s_Tenth_Rule">greenspun</a> them ourselves. In practice, however, this is buggy, inefficient, and presents our fellow developers with serious challenges understanding our code.<a href="chap05.html#fnref-turing" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-dynamic">For many programmers, the distinction between a dynamic relationship and a copying mechanism too fine to worry about. However, it makes many dynamic program modifications possible.<a href="chap05.html#fnref-dynamic" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-reminder">Recall that Strings, Numbers, Booleans and so forth are value types and primitives. We&#x2019;re calling them primitives here.<a href="chap05.html#fnref-reminder" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-wr">A <a href="https://en.wikipedia.org/wiki/Weak_reference">weak reference</a> is a reference that does not protect the referenced object from collection by a garbage collector; unlike a strong reference. An object referenced only by weak references is considered unreachable (or weakly reachable) and so may be collected at any time.<a href="chap05.html#fnref-wr" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-json">To be precise, it works for functions that take arguments that can be expressed with JSON. So you can&#x2019;t memoize a function that is applied to functions, but it&#x2019;s fine for strings, numbers, arrays of JSON, POCOs of JSON, and so forth.<a href="chap06.html#fnref-json" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-py">The term &#x201C;method decorator&#x201D; is borrowed from the Python programming language<a href="chap06.html#fnref-py" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-interactive">Interactive promises also support <code>.get</code> and <code>.call</code> methods for interacting with a potentially remote object.<a href="chap06.html#fnref-interactive" rev="footnote">&#x21A9;</a></li>
+    <li id="fn-whoa">Instructions for installing NodeJS and modules like CoffeeScript onto a desktop computer is beyond the scope of this book, especially given the speed with which things advance. Fortunately, there are always up-to-date instructions on the web.<a href="chap07.html#fnref-whoa" rev="footnote">&#x21A9;</a></li>
+  </ol></div>
+</div>
+<div id="leanpub-toc">
+<h2>Table of Contents</h2>
+<ol class="toc">
+<li class="chapter"><a href="chap00.html#a-pull-of-the-lever-prefaces">A Pull of the Lever: Prefaces</a></li>
+<li class="section"><a href="chap00.html#about-this-book">About This Book</a></li>
+<li class="section"><a href="chap00.html#legend">Legend</a></li>
+<li class="chapter"><a href="chap01.html#prelude-values-and-expressions">Prelude: Values and Expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-expressions">values and expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-identity">values and identity</a></li>
+<li class="chapter"><a href="chap02.html#functions">The first sip: Functions</a></li>
+<li class="section"><a href="chap02.html#as-little-as-possible-about-functions-but-no-less">As Little As Possible About Functions, But No Less</a></li>
+<li class="section"><a href="chap02.html#fargs">Ah. I&#x2019;d Like to Have an Argument, Please.<sup id="fnref-mp">
+  <a href="chap07.html#fn-mp" rel="footnote">6</a>
+</sup></a></li>
+<li class="section"><a href="chap02.html#closures">Closures and Scope</a></li>
+<li class="section"><a href="chap02.html#a-simple-question">A Simple Question</a></li>
+<li class="section"><a href="chap02.html#summary-functions">Summary: Functions</a></li>
+<li class="chapter"><a href="chap03.html#more-functions">Slurp: More About Functions and Scope</a></li>
+<li class="section"><a href="chap03.html#let-me-show-you-what-to-do">Let Me Show You What To Do</a></li>
+<li class="section"><a href="chap03.html#making-things-easy">Making Things Easy</a></li>
+<li class="section"><a href="chap03.html#poco">References, Identity, Arrays, and Objects</a></li>
+<li class="section"><a href="chap03.html#summary-more-about-functions-and-scope">Summary: More About Functions And Scope</a></li>
+<li class="chapter"><a href="chap04.html#mutable">Stir the Espresso: Objects, Mutation, and State</a></li>
+<li class="section"><a href="chap04.html#reassignment-and-mutation">Reassignment and Mutation</a></li>
+<li class="section"><a href="chap04.html#normal-case-variables">Normal Case Variables</a></li>
+<li class="section"><a href="chap04.html#comprehensions">Comprehensions</a></li>
+<li class="section"><a href="chap04.html#encapsulation">Encapsulating State with Closures</a></li>
+<li class="section"><a href="chap04.html#composition">Composition and Extension</a></li>
+<li class="section"><a href="chap04.html#this">This and That</a></li>
+<li class="section"><a href="chap04.html#summary-objects-mutation-and-state">Summary: Objects, Mutation, and State</a></li>
+<li class="chapter"><a href="chap05.html#methods">Finish the Cup: Instances and Classes</a></li>
+<li class="section"><a href="chap05.html#prototypes-are-simple-its-the-explanations-that-are-hard-to-understand">Prototypes are Simple, it&#x2019;s the Explanations that are Hard To Understand</a></li>
+<li class="section"><a href="chap05.html#a-touch-of-class">A Touch of Class</a></li>
+<li class="section"><a href="chap05.html#object-methods">Object Methods</a></li>
+<li class="section"><a href="chap05.html#canonicalization">Canonicalization</a></li>
+<li class="section"><a href="chap05.html#this-section-needs-no-title">This Section Needs No Title</a></li>
+<li class="section"><a href="chap05.html#classextension">Extending Classes</a></li>
+<li class="section"><a href="chap05.html#summary-instances-and-classes">Summary: Instances and Classes</a></li>
+<li class="chapter"><a href="chap06.html#extra-shot">An Extra Shot of Ideas</a></li>
+<li class="section"><a href="chap06.html#combinators">Refactoring to Combinators</a></li>
+<li class="section"><a href="chap06.html#method-decorators">Method Decorators</a></li>
+<li class="section"><a href="chap06.html#callbacks-and-promises">Callbacks and Promises</a></li>
+<li class="section"><a href="chap06.html#summary-an-extra-shot-of-ideas">Summary: An Extra Shot of Ideas</a></li>
+<li class="chapter"><a href="chap07.html#a-golden-crema">A Golden Crema</a></li>
+<li class="section"><a href="chap07.html#online">How to run the examples</a></li>
+<li class="section"><a href="chap07.html#thanks">Thanks!</a></li>
+<li class="section"><a href="chap07.html#copyright-notice">Copyright Notice</a></li>
+<li class="section"><a href="chap07.html#about-the-author">About The Author</a></li>
+</ol>
+</div>
+</body>
+</html>

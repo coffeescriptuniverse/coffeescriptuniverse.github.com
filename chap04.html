@@ -1,0 +1,1083 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Stir the Espresso: Objects, Mutation, and State</title>
+<link href="stylesheet.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+<div id="leanpub-main">
+<h2 id="mutable">Stir the Espresso: Objects, Mutation, and State</h2>
+
+<div class="image-with-caption">
+  <p><img src="images/coffee-spoons.jpg" alt="Life measured out by coffee spoons" /></p><p>Life measured out by coffee spoons</p>
+</div>
+
+<p>So far, we have discussed what many call &#x201C;pure functional&#x201D; programming, where every expression is necessarily <a href="https://en.wikipedia.org/wiki/Idempotence">idempotent</a>, because we have no way of changing state within a program using the tools we have examined.</p>
+
+<p>It&#x2019;s time to change <em>everything</em>.</p>
+
+<div class="page-break"></div>
+<h3 id="reassignment-and-mutation">Reassignment and Mutation</h3>
+
+<p>Like most imperative programming languages, CoffeeScript allows you to re-assign the value of variables. The syntax is familiar to users of most popular languages:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">age</code> <code class="p">=</code> 49<code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">age</code> <code class="p">=</code> 50
+  <code class="n">age</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 50
+</pre></div>
+
+</div>
+
+<div class="aside sidebarish">
+  <hr /><p>In CoffeeScript, nearly everything is an expression, including statements that assign a value to a variable, so we could just as easily write <code>do (age = 49) -&gt; age = 50</code>.</p>
+
+  <hr /></div>
+
+<p>We took the time to carefully examine what happens with bindings in environments. Let&#x2019;s take the time to fully explore what happens with reassigning values to variables. The key is to understand that we are rebinding a different value to the same name in the same environment.</p>
+
+<p>So let&#x2019;s consider what happens with a shadowed variable:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">age</code> <code class="p">=</code> 49<code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">age</code> <code class="p">=</code> 50<code class="p">)</code> <code class="o">-&gt;</code>
+    # <code class="n">yadda</code> <code class="n">yadda</code>
+  <code class="n">age</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 49
+</pre></div>
+
+</div>
+
+<p>Binding <code>50</code> to age in the inner environment does not change <code>age</code> in the outer environment because the binding of <code>age</code> in the inner environment shadows the binding of <code>age</code> in the outer environment. We go from:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code><code class="n">age</code><code class="p">:</code> 49<code class="p">,</code> <code class="s">'..'</code><code class="p">:</code> <code class="k">global</code><code class="o">-</code><code class="n">environment</code><code class="p">}</code>
+</pre></div>
+
+</div>
+
+<p>To:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code><code class="n">age</code><code class="p">:</code> 50<code class="p">,</code> <code class="s">'..'</code><code class="p">:</code> <code class="p">{</code><code class="n">age</code><code class="p">:</code> 49<code class="p">,</code> <code class="s">'..'</code><code class="p">:</code> <code class="k">global</code><code class="o">-</code><code class="n">environment</code><code class="p">}}</code>
+</pre></div>
+
+</div>
+
+<p>Then back to:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code><code class="n">age</code><code class="p">:</code> 49<code class="p">,</code> <code class="s">'..'</code><code class="p">:</code> <code class="k">global</code><code class="o">-</code><code class="n">environment</code><code class="p">}</code>
+</pre></div>
+
+</div>
+
+<p>However, if we don&#x2019;t shadow <code>age</code>, reassigning it in a nested environment changes the original:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">age</code> <code class="p">=</code> 49<code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">height</code> <code class="p">=</code> 1<code class="p">.</code>85<code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">age</code> <code class="p">=</code> 50
+  <code class="n">age</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 50
+</pre></div>
+
+</div>
+
+<p>Like evaluating variable labels, when a binding is rebound, CoffeeScript searches for the binding in the current environment and then each ancestor in turn until it finds one. It then rebinds the name in that environment.</p>
+
+<h4 id="mutation-and-aliases">mutation and aliases</h4>
+
+<p>Now that we can reassign things, there&#x2019;s another important factor to consider: Some values can <em>mutate</em>. Their identities stay the same, but not their structure. Specifically, arrays and objects can mutate. Recall that you can access a value from within an array or an object using <code>[]</code>. You can reassign a value using <code>[]</code> as well:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">oneTwoThree</code> <code class="p">=</code> <code class="p">[</code>1<code class="p">,</code> 2<code class="p">,</code> 3<code class="p">])</code> <code class="o">-&gt;</code>
+  <code class="n">oneTwoThree</code><code class="p">[</code>0<code class="p">]</code> <code class="p">=</code> <code class="s">'one'</code>
+  <code class="n">oneTwoThree</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> <code class="s">'one'</code><code class="p">,</code> 2<code class="p">,</code> 3 <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>You can even add a value:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">oneTwoThree</code> <code class="p">=</code> <code class="p">[</code>1<code class="p">,</code> 2<code class="p">,</code> 3<code class="p">])</code> <code class="o">-&gt;</code>
+  <code class="n">oneTwoThree</code><code class="p">[</code>3<code class="p">]</code> <code class="p">=</code> <code class="s">'four'</code>
+  <code class="n">oneTwoThree</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> 1<code class="p">,</code> 2<code class="p">,</code> 3<code class="p">,</code> <code class="s">'four'</code> <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>You can do the same thing with both syntaxes for accessing objects:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">name</code> <code class="p">=</code> <code class="p">{</code><code class="n">firstName</code><code class="p">:</code> <code class="s">'Leonard'</code><code class="p">,</code> <code class="n">lastName</code><code class="p">:</code> <code class="s">'Braithwaite'</code><code class="p">})</code> <code class="o">-&gt;</code>
+  <code class="n">name</code><code class="p">.</code><code class="n">middleName</code> <code class="p">=</code> <code class="s">'Austin'</code>
+  <code class="n">name</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">{</code> <code class="n">firstName</code><code class="p">:</code> <code class="s">'Leonard'</code><code class="p">,</code>
+  #     <code class="n">lastName</code><code class="p">:</code> <code class="s">'Braithwaite'</code><code class="p">,</code>
+  #     <code class="n">middleName</code><code class="p">:</code> <code class="s">'Austin'</code> <code class="p">}</code>
+</pre></div>
+
+</div>
+
+<p>We have established that CoffeeScript&#x2019;s semantics allow for two different bindings to refer to the same value. For example:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">allHallowsEve</code> <code class="p">=</code> <code class="p">[</code>2012<code class="p">,</code> 10<code class="p">,</code> 31<code class="p">])</code> <code class="o">-&gt;</code>
+  <code class="n">halloween</code> <code class="p">=</code> <code class="n">allHallowsEve</code>  
+</pre></div>
+
+</div>
+
+<p>Both <code>halloween</code> and <code>allHallowsEve</code> are bound to the same array value within the local environment. And also:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">allHallowsEve</code> <code class="p">=</code> <code class="p">[</code>2012<code class="p">,</code> 10<code class="p">,</code> 31<code class="p">])</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">allHallowsEve</code><code class="p">)</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>There are two nested environments, and each one binds the name <code>allHallowsEve</code> to the exact same array value. In each of these examples, we have created two <em>aliases</em> for the same value. Before we could reassign things, the most important point about this is that the identities were the same, because they were the same value.</p>
+
+<p>This is vital. Consider what we already know about shadowing:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">allHallowsEve</code> <code class="p">=</code> <code class="p">[</code>2012<code class="p">,</code> 10<code class="p">,</code> 31<code class="p">])</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">allHallowsEve</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">allHallowsEve</code> <code class="p">=</code> <code class="p">[</code>2013<code class="p">,</code> 10<code class="p">,</code> 31<code class="p">]</code>
+  <code class="n">allHallowsEve</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> 2012<code class="p">,</code> 10<code class="p">,</code> 31 <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>The outer value of <code>allHallowsEve</code> was not changed because all we did was rebind the name <code>allHallowsEve</code> within the inner environment. However, what happens if we <em>mutate</em> the value in the inner environment?</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">allHallowsEve</code> <code class="p">=</code> <code class="p">[</code>2012<code class="p">,</code> 10<code class="p">,</code> 31<code class="p">])</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">allHallowsEve</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">allHallowsEve</code><code class="p">[</code>0<code class="p">]</code> <code class="p">=</code> 2013
+  <code class="n">allHallowsEve</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> 2013<code class="p">,</code> 10<code class="p">,</code> 31 <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>This is different. We haven&#x2019;t rebound the inner name to a different variable, we&#x2019;ve mutated the value that both bindings share.</p>
+
+<p>The same thing is true whenever you have multiple aliases to the same value:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">greatUncle</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">,</code> <code class="n">grandMother</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">greatUncle</code> <code class="p">=</code> <code class="p">{</code><code class="n">firstName</code><code class="p">:</code> <code class="s">'Leonard'</code><code class="p">,</code> <code class="n">lastName</code><code class="p">:</code> <code class="s">'Braithwaite'</code><code class="p">}</code>
+  <code class="n">grandMother</code> <code class="p">=</code> <code class="n">greatUncle</code>
+  <code class="n">grandMother</code><code class="p">[</code><code class="s">'firstName'</code><code class="p">]</code> <code class="p">=</code> <code class="s">'Lois'</code>
+  <code class="n">grandMother</code><code class="p">[</code><code class="s">'lastName'</code><code class="p">]</code> <code class="p">=</code> <code class="s">'Barzey'</code>
+  <code class="n">greatUncle</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">{</code> <code class="n">firstName</code><code class="p">:</code> <code class="s">'Lois'</code><code class="p">,</code> <code class="n">lastName</code><code class="p">:</code> <code class="s">'Barzey'</code> <code class="p">}</code>
+</pre></div>
+
+</div>
+
+<p>This example uses the <a href="chap04.html#letrec"><code>letrec</code></a> pattern for declaring bindings. Now that we&#x2019;ve finished with mutation and aliases, let&#x2019;s have a look at it.</p>
+
+<h4 id="letrec">letrec</h4>
+
+<p>One way to exploit reassignment is to &#x201C;declare&#x201D; your bindings with <code>do</code> and bind them to something temporarily, and then rebind them inline, like so:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">identity</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">,</code> <code class="n">kestrel</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">identity</code> <code class="p">=</code> <code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code>
+  <code class="n">kestrel</code> <code class="p">=</code> <code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code>
+</pre></div>
+
+</div>
+
+<p>This pattern is called <code>letrec</code> after the Lisp special form. Recall that <a href="chap03.html#let"><code>let</code></a> looks like this in CoffeeScript:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">identity</code> <code class="p">=</code> <code class="p">((</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code><code class="p">),</code> <code class="n">kestrel</code> <code class="p">=</code> <code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+</pre></div>
+
+</div>
+
+<p>To see how <code>letrec</code> differs from <code>let</code>, consider writing a recursive function<sup id="fnref-y"><a href="chap07.html#fn-y" rel="footnote">13</a></sup> like <code>pow</code>. <code>pow</code> takes two arguments, <code>n</code> and <code>p</code>, and returns <code>n</code> raised to the <code>p</code><sup>th</sup> power. For simplicity, we&#x2019;ll assume that <code>p</code> is an integer.</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">pow</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">pow</code> <code class="p">=</code> <code class="p">(</code><code class="n">n</code><code class="p">,</code> <code class="n">p</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="k">if</code> <code class="n">p</code> <code class="o">&lt;</code> 0
+      1<code class="o">/</code><code class="n">pow</code><code class="p">(</code><code class="n">n</code><code class="p">,</code> <code class="o">-</code><code class="n">p</code><code class="p">)</code>
+    <code class="k">else</code> <code class="k">if</code> <code class="n">p</code> <code class="n">is</code> 0
+      1
+    <code class="k">else</code> <code class="k">if</code> <code class="n">p</code> <code class="n">is</code> 1
+      <code class="n">n</code>
+    <code class="k">else</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">half</code> <code class="p">=</code> <code class="n">pow</code><code class="p">(</code><code class="n">n</code><code class="p">,</code> <code class="n">Math</code><code class="p">.</code><code class="nb">floor</code><code class="p">(</code><code class="n">p</code><code class="o">/</code>2<code class="p">)),</code> <code class="n">remainder</code> <code class="p">=</code> <code class="n">pow</code><code class="p">(</code><code class="n">n</code><code class="p">,</code> <code class="n">p</code> <code class="c">% 2)) -&gt;</code>
+        <code class="n">half</code> <code class="o">*</code> <code class="n">half</code> <code class="o">*</code> <code class="n">remainder</code>
+</pre></div>
+
+</div>
+
+<p>In order for <code>pow</code> to call itself, <code>pow</code> must be bound in the environment in which <code>pow</code> is defined. This wouldn&#x2019;t work if we tried to bind <code>pow</code> in the <code>do</code> itself. Here&#x2019;s a misguided attempt to create a recursive function using <code>let</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">odd</code> <code class="p">=</code> <code class="p">(</code><code class="n">n</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="k">if</code> <code class="n">n</code> <code class="n">is</code> 0 <code class="n">then</code> <code class="n">false</code> <code class="k">else</code> <code class="n">not</code> <code class="n">odd</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>1<code class="p">))</code> <code class="o">-&gt;</code>
+  <code class="n">odd</code><code class="p">(</code>5<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>To see why this doesn&#x2019;t work, recall that this is equivalent to writing:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">odd</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">odd</code><code class="p">(</code>5<code class="p">)</code>
+<code class="p">)(</code> <code class="p">(</code><code class="n">n</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="k">if</code> <code class="n">n</code> <code class="n">is</code> 0 <code class="n">then</code> <code class="n">false</code> <code class="k">else</code> <code class="n">not</code> <code class="n">odd</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>1<code class="p">)</code> <code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>The expression <code>(n) -&gt; if n is 0 then false else not odd(n-1)</code> is evaluated in the parent environment, where <code>odd</code> hasn&#x2019;t been bound yet. Whereas, if we wrote <code>odd</code> with <code>letrec</code>, it would look like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">odd</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">odd</code> <code class="p">=</code> <code class="p">(</code><code class="n">n</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="k">if</code> <code class="n">n</code> <code class="n">is</code> 0 <code class="n">then</code> <code class="n">false</code> <code class="k">else</code> <code class="n">not</code> <code class="n">odd</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>1<code class="p">)</code>
+  <code class="n">odd</code><code class="p">(</code>5<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Which is equivalent to:  </p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">odd</code><code class="p">)</code> <code class="o">-&gt;</code>  
+  <code class="n">odd</code> <code class="p">=</code> <code class="p">(</code><code class="n">n</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="k">if</code> <code class="n">n</code> <code class="n">is</code> 0 <code class="n">then</code> <code class="n">false</code> <code class="k">else</code> <code class="n">not</code> <code class="n">odd</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>1<code class="p">)</code>
+  <code class="n">odd</code><code class="p">(</code>5<code class="p">)</code>
+<code class="p">)(</code> <code class="n">undefined</code> <code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Now the <code>odd</code> function is bound in an environment that has a binding for the name <code>odd</code>. <code>letrec</code> also allows you to make expressions that depend upon each other, recursively or otherwise, such as:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">I</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">,</code> <code class="n">K</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">,</code> <code class="n">T</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">,</code> <code class="n">F</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">I</code> <code class="p">=</code> <code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code>
+  <code class="n">K</code> <code class="p">=</code> <code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code>
+  <code class="n">T</code> <code class="p">=</code> <code class="n">K</code>
+  <code class="n">F</code> <code class="p">=</code> <code class="n">K</code><code class="p">(</code><code class="n">I</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<h4 id="takeaway">takeaway</h4>
+
+<div class="tip sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" />CoffeeScript permits the reassignment of new values to existing bindings, as well as the reassignment and assignment of new values to elements of containers such as arrays and objects. Mutating existing objects has special implications when two bindings are aliases of the same value.</p>
+
+  <p>The <code>letrec</code> pattern allows us to bind interdependent and recursive expressions.</p>
+
+  <hr /></div>
+
+<div class="page-break"></div>
+<h3 id="normal-case-variables">Normal Case Variables</h3>
+
+<p>Now that we&#x2019;ve discussed reassignment, it&#x2019;s time to discuss <em>assignment</em>.</p>
+
+<div class="aside sidebarish">
+  <hr /><p>It sounds odd to say we&#x2019;ve reassigned things without assigning them. Up to now, we&#x2019;ve <em>bound</em> values to names through arguments, and <code>do</code>, which is really syntactic sugar for the <code>let</code> pattern.</p>
+
+  <hr /></div>
+
+<p>In CoffeeScript, the syntax for assignment is identical to the syntax for reassignment:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">birthday</code> <code class="p">=</code> <code class="p">{</code> <code class="n">year</code><code class="p">:</code> 1962<code class="p">,</code> <code class="n">month</code><code class="p">:</code> 6<code class="p">,</code> <code class="n">day</code><code class="p">:</code> 14 <code class="p">}</code>
+</pre></div>
+
+</div>
+
+<p>The difference comes when there is no value bound to the name <code>birthday</code> in any of the user-defined environments. In that case, CoffeeScript creates one in the current function&#x2019;s environment. The current function is any of the following:</p>
+
+<ol><li>A function created with an arrow operator (<code>-&gt;</code> that we&#x2019;ve seen, and <code>=&gt;</code> that we&#x2019;ll see when we look at objects <a href="chap05.html#methods">in more detail</a>).</li>
+  <li>A function created with the <code>do</code> syntax.</li>
+  <li>When compiling CoffeeScript in files, an empty <code>do -&gt;</code> is invisibly created to enclose the entire file.</li>
+</ol><p>One good consequence of this feature is that you can dispense with all of the nested <code>do (...) -&gt;</code> expressions you&#x2019;ve seen so far if you wish. You can boldly write things like:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">identity</code> <code class="p">=</code> <code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code>
+<code class="n">kestrel</code> <code class="p">=</code> <code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code>
+<code class="n">truth</code> <code class="p">=</code> <code class="n">kestrel</code>
+<code class="n">falsehood</code> <code class="p">=</code> <code class="n">kestrel</code><code class="p">(</code><code class="n">identity</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>You can also do your assignments wherever you like in a function, not just at the top. Some feel this makes code more readable by putting variable definitions closer to their use.</p>
+
+<p>There are two unfortunate consequences. The first is that a misspelling creates a new binding rather than resulting in an error:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">age</code> <code class="p">=</code> 49<code class="p">)</code> <code class="o">-&gt;</code>
+  # <code class="p">...</code>
+  <code class="n">agee</code> <code class="p">=</code> 50
+  # <code class="p">...</code>
+  <code class="n">age</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 49<code class="p">,</code> <code class="n">not</code> 50
+</pre></div>
+
+</div>
+
+<p>The second is that you may accidentally alias an existing variable if you are not careful. If you&#x2019;re in the habit of creating a lot of your variables with assignments rather than with <code>do</code>, you must be careful to scan the source of all of your function&#x2019;s parents to ensure you haven&#x2019;t accidentally reused the name of an existing binding.<sup id="fnref-worse"><a href="chap07.html#fn-worse" rel="footnote">14</a></sup></p>
+
+<div class="aside sidebarish">
+  <hr /><p>CoffeeScript calls creating new bindings with assignment &#x201C;normal case,&#x201D; because it&#x2019;s how most programmers normally create bindings. Just remember that if anyone criticizes CoffeeScript for being loose with scoping and aliases, you can always show them how to use <code>do</code> to emulate <code>let</code> and <code>letrec</code>.</p>
+
+  <hr /></div>
+
+<div class="page-break"></div>
+<h3 id="comprehensions">Comprehensions</h3>
+
+<div class="image-with-caption">
+  <p><img src="images/cupping.jpg" alt="Cupping Grinds" /></p><p>Cupping Grinds</p>
+</div>
+
+<p>If you&#x2019;re they type of person who can &#x201C;Write Lisp in any language,&#x201D; you could set about writing entire CoffeeScript programs using <code>let</code> and <code>letrec</code> patterns such that you don&#x2019;t have <em>any</em> normal case variables.</p>
+
+<p>But as you dive into CoffeeScript, you&#x2019;ll discover many helpful features that aren&#x2019;t &#x201C;Lisp-y.&#x201D; Eschewing them is to cut against CoffeeScript&#x2019;s grain. One of those features is the <a href="http://coffeescript.org/#loops">comprehension</a>, a mechanism for working with collections that was popularized by Python.</p>
+
+<p>Here&#x2019;s a sample comprehension:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>"<code class="n">Hello</code> #<code class="p">{</code><code class="n">name</code><code class="p">}</code>" <code class="k">for</code> <code class="n">name</code> <code class="n">in</code> <code class="p">[</code><code class="s">'algernon'</code><code class="p">,</code> <code class="s">'sabine'</code><code class="p">,</code> <code class="s">'rupert'</code><code class="p">,</code> <code class="s">'theodora'</code><code class="p">]</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> <code class="s">'Hello algernon'</code><code class="p">,</code>
+  #     <code class="s">'Hello sabine'</code><code class="p">,</code>
+  #     <code class="s">'Hello rupert'</code><code class="p">,</code>
+  #     <code class="s">'Hello theodora'</code> <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>An alternate syntax for the same thing that supports multiple expressions is:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">for</code> <code class="n">name</code> <code class="n">in</code> <code class="p">[</code><code class="s">'algernon'</code><code class="p">,</code> <code class="s">'sabine'</code><code class="p">,</code> <code class="s">'rupert'</code><code class="p">,</code> <code class="s">'theodora'</code><code class="p">]</code>
+  "<code class="n">Hello</code> #<code class="p">{</code><code class="n">name</code><code class="p">}</code>"
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> <code class="s">'Hello algernon'</code><code class="p">,</code>
+  #     <code class="s">'Hello sabine'</code><code class="p">,</code>
+  #     <code class="s">'Hello rupert'</code><code class="p">,</code>
+  #     <code class="s">'Hello theodora'</code> <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>Here&#x2019;s a question: There&#x2019;s a variable reference <code>name</code> in this code. Is it somehow bound to a new environment in the comprehension? Or is it a &#x201C;normal case variable&#x201D; that is either bound in the current function&#x2019;s environment or in a parent function&#x2019;s environment?</p>
+
+<p>Let&#x2019;s try it and see:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">name</code> <code class="p">=</code> <code class="s">'clyde'</code>
+"<code class="n">Hello</code> #<code class="p">{</code><code class="n">name</code><code class="p">}</code>" <code class="k">for</code> <code class="n">name</code> <code class="n">in</code> <code class="p">[</code><code class="s">'algernon'</code><code class="p">,</code> <code class="s">'sabine'</code><code class="p">,</code> <code class="s">'rupert'</code><code class="p">,</code> <code class="s">'theodora'</code><code class="p">]</code>
+<code class="n">name</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'theodora'</code>
+</pre></div>
+
+</div>
+
+<p>It&#x2019;s a normal case variable. If it was somehow &#x2018;local&#x2019; to the comprehension, <code>name</code> would still be <code>clyde</code> as the comprehension&#x2019;s binding would shadow the current environment&#x2019;s binding. This is usually fine, as creating a new environment for every comprehension could have performance implications.</p>
+
+<p>However, there are two times you don&#x2019;t want that to happen. First, you might want <code>name</code> to shadow the existing <code>name</code> binding. You can use <code>do</code> to fix that:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">name</code> <code class="p">=</code> <code class="s">'clyde'</code>
+<code class="n">do</code> <code class="p">(</code><code class="n">name</code><code class="p">)</code> <code class="o">-&gt;</code>
+  "<code class="n">Hello</code> #<code class="p">{</code><code class="n">name</code><code class="p">}</code>" <code class="k">for</code> <code class="n">name</code> <code class="n">in</code> <code class="p">[</code><code class="s">'algernon'</code><code class="p">,</code> <code class="s">'sabine'</code><code class="p">,</code> <code class="s">'rupert'</code><code class="p">,</code> <code class="s">'theodora'</code><code class="p">]</code>
+<code class="n">name</code>
+  #<code class="p">=</code><code class="o">&gt;</code> `<code class="n">clyde</code>`
+</pre></div>
+
+</div>
+
+<p>When you put a name in the argument list for <code>do -&gt;</code> but you don&#x2019;t supply a value, CoffeeScript assumes you are deliberately trying to shadow a variable. It acts as if you&#x2019;d written:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">name</code> <code class="p">=</code> <code class="s">'clyde'</code>
+<code class="p">((</code><code class="n">name</code><code class="p">)</code> <code class="o">-&gt;</code>
+  "<code class="n">Hello</code> #<code class="p">{</code><code class="n">name</code><code class="p">}</code>" <code class="k">for</code> <code class="n">name</code> <code class="n">in</code> <code class="p">[</code><code class="s">'algernon'</code><code class="p">,</code> <code class="s">'sabine'</code><code class="p">,</code> <code class="s">'rupert'</code><code class="p">,</code> <code class="s">'theodora'</code><code class="p">]</code>
+<code class="p">)(</code><code class="n">name</code><code class="p">)</code>
+<code class="n">name</code>
+  #<code class="p">=</code><code class="o">&gt;</code> `<code class="n">clyde</code>`
+</pre></div>
+
+</div>
+
+<p>So technically, the inner <code>name</code> will be bound to the same value as the outer <code>name</code> initially, but as the comprehension is evaluated, that value will be overwritten in the inner environment but not the outer environment.</p>
+
+<h4 id="preventing-a-subtle-comprehensions-bug">preventing a subtle comprehensions bug</h4>
+
+<p>The second time you don&#x2019;t want a comprehension&#x2019;s variable to be normal case is more subtle, but a source of errors for the unwary. Consider this variation of the above comprehension:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">for</code> <code class="n">myName</code> <code class="n">in</code> <code class="p">[</code><code class="s">'algernon'</code><code class="p">,</code> <code class="s">'sabine'</code><code class="p">,</code> <code class="s">'rupert'</code><code class="p">,</code> <code class="s">'theodora'</code><code class="p">]</code>
+  <code class="p">(</code><code class="n">yourName</code><code class="p">)</code><code class="o">-&gt;</code> "<code class="n">Hello</code> #<code class="p">{</code><code class="n">yourName</code><code class="p">},</code> <code class="n">my</code> <code class="n">name</code> <code class="n">is</code> #<code class="p">{</code><code class="n">myName</code><code class="p">}</code>"
+</pre></div>
+
+</div>
+
+<p>Now what we want is four functions, each of which can generate a sentence like &#x201C;Hello reader, my name is rupert&#x201D;. We can test that with a comprehension:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">fn</code><code class="p">(</code><code class="s">'reader'</code><code class="p">)</code> <code class="k">for</code> <code class="n">fn</code> <code class="n">in</code> <code class="k">for</code> <code class="n">myName</code> <code class="n">in</code> <code class="p">[</code>
+  <code class="s">'algernon'</code>
+  <code class="s">'sabine'</code>
+  <code class="s">'rupert'</code>
+  <code class="s">'theodora'</code>
+<code class="p">]</code>
+  <code class="p">(</code><code class="n">yourName</code><code class="p">)</code> <code class="o">-&gt;</code> "<code class="n">Hello</code> #<code class="p">{</code><code class="n">yourName</code><code class="p">},</code> <code class="n">my</code> <code class="n">name</code> <code class="n">is</code> #<code class="p">{</code><code class="n">myName</code><code class="p">}</code>"
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> <code class="s">'Hello reader, my name is theodora'</code><code class="p">,</code>
+  #     <code class="s">'Hello reader, my name is theodora'</code><code class="p">,</code>
+  #     <code class="s">'Hello reader, my name is theodora'</code><code class="p">,</code>
+  #     <code class="s">'Hello reader, my name is theodora'</code> <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>WTF!?</p>
+
+<p>If we consider our model for binding, we&#x2019;ll quickly discover the problem. Each of the functions we generate has a closure that consists of a function and a local environment. <code>yourName</code> is bound in its local environment, but <code>myName</code> is bound in the comprehension&#x2019;s environment. At the time each closure was created, <code>myName</code> was bound to one of the four names, but at the time the closures are evaluated, <code>myName</code> is bound to the last of the four names.</p>
+
+<p>Each of the four closures has its own local environment, but they <em>share</em> a parent environment, which means they share the exact same binding for <code>myName</code>. We can fix it using the &#x201C;shadow&#x201D; syntax for <code>do</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">fn</code><code class="p">(</code><code class="s">'reader'</code><code class="p">)</code> <code class="k">for</code> <code class="n">fn</code> <code class="n">in</code> <code class="k">for</code> <code class="n">myName</code> <code class="n">in</code> <code class="p">[</code>
+  <code class="s">'algernon'</code>
+  <code class="s">'sabine'</code>
+  <code class="s">'rupert'</code>
+  <code class="s">'theodora'</code>
+<code class="p">]</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">myName</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">(</code><code class="n">yourName</code><code class="p">)</code> <code class="o">-&gt;</code> "<code class="n">Hello</code> #<code class="p">{</code><code class="n">yourName</code><code class="p">},</code> <code class="n">my</code> <code class="n">name</code> <code class="n">is</code> #<code class="p">{</code><code class="n">myName</code><code class="p">}</code>"
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> <code class="s">'Hello reader, my name is algernon'</code><code class="p">,</code>
+  #     <code class="s">'Hello reader, my name is sabine'</code><code class="p">,</code>
+  #     <code class="s">'Hello reader, my name is rupert'</code><code class="p">,</code>
+  #     <code class="s">'Hello reader, my name is theodora'</code> <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>Now, each time we create a function we&#x2019;re first creating its own environment and binding <code>myName</code> there, shadowing the comprehension&#x2019;s binding of <code>myName</code>. Thus, the comprehension&#x2019;s changes to <code>myName</code> don&#x2019;t change each closure&#x2019;s binding.</p>
+
+<h4 id="takeaway-1">takeaway</h4>
+
+<div class="tip sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" /><a href="http://coffeescript.org/#loops">Comprehensions</a> are extraordinarily useful for working with collections, but their loop variables are normal case and may require special care to obtain the desired results.</p>
+
+  <hr /></div>
+
+<div class="page-break"></div>
+<h3 id="encapsulation">Encapsulating State with Closures</h3>
+
+<blockquote>
+  <p>OOP to me means only messaging, local retention and protection and hiding of state-process, and extreme late-binding of all things.&#x2013;<a href="http://userpage.fu-berlin.de/~ram/pub/pub_jf47ht81Ht/doc_kay_oop_en">Alan Kay</a></p>
+</blockquote>
+
+<p>We&#x2019;re going to look at encapsulation using CoffeeScript&#x2019;s functions and objects. We&#x2019;re not going to call it object-oriented programming, mind you, because that would start a long debate. This is just plain encapsulation<sup id="fnref-encapsulation"><a href="chap07.html#fn-encapsulation" rel="footnote">15</a></sup>, with a dash of information-hiding.</p>
+
+<h4 id="what-is-hiding-of-state-process-and-why-does-it-matter">what is hiding of state-process, and why does it matter?</h4>
+
+<blockquote>
+  <p>In computer science, information hiding is the principle of segregation of the design decisions in a computer program that are most likely to change, thus protecting other parts of the program from extensive modification if the design decision is changed. The protection involves providing a stable interface which protects the remainder of the program from the implementation (the details that are most likely to change).</p>
+</blockquote>
+
+<blockquote>
+  <p>Written another way, information hiding is the ability to prevent certain aspects of a class or software component from being accessible to its clients, using either programming language features (like private variables) or an explicit exporting policy.</p>
+</blockquote>
+
+<blockquote>
+  <p>&#x2013;<a href="https://en.wikipedia.org/wiki/Information_hiding" title="Information hiding">Wikipedia</a></p>
+</blockquote>
+
+<p>Consider a <a href="https://en.wikipedia.org/wiki/Stack_" title="data_structure">stack</a> data structure. There are three basic operations: Pushing a value onto the top (<code>push</code>), popping a value off the top (<code>pop</code>), and testing to see whether the stack is empty or not (<code>isEmpty</code>). These three operations are the stable interface.</p>
+
+<p>Many stacks have an array for holding the contents of the stack. This is relatively stable. You could substitute a linked list, but in CoffeeScript, the array is highly efficient. You might need an index, you might not. You could grow and shrink the array, or you could allocate a fixed size and use an index to keep track of how much of the array is in use. The design choices for keeping track of the head of the list are often driven by performance considerations.</p>
+
+<p>If you expose the implementation detail such as whether there is an index, sooner or later some programmer is going to find an advantage in using the index directly. For example, she may need to know the size of a stack. The ideal choice would be to add a <code>size</code> function that continues to hide the implementation. But she&#x2019;s in a hurry, so she reads the <code>index</code> directly. Now her code is coupled to the existence of an index, so if we wish to change the implementation to grow and shrink the array, we will break her code.</p>
+
+<p>The way to avoid this is to hide the array and index from other code and only expose the operations we have deemed stable. If and when someone needs to know the size of the stack, we&#x2019;ll add a <code>size</code> function and expose it as well.</p>
+
+<p>Hiding information (or &#x201C;state&#x201D;) is the design principle that allows us to limit the coupling between components of software.</p>
+
+<h4 id="hiding-state">how do we hide state using coffeescript?</h4>
+
+<p>We&#x2019;ve been introduced to CoffeeScript&#x2019;s objects, and it&#x2019;s fairly easy to see that the can be used to model what other programming languages call (variously) records, structs, frames, or what-have-you. And given that their elements are mutable, they can clearly model state.</p>
+
+<p>Given an object that holds our state (an array and an index<sup id="fnref-length"><a href="chap07.html#fn-length" rel="footnote">16</a></sup>), we can easily implement our three operations as functions. Bundling the functions with the state does not require any special &#x201C;magic&#x201D; features. CoffeeScript objects can have elements of any type, including functions:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">stack</code> <code class="p">=</code> <code class="n">do</code> <code class="p">(</code><code class="n">obj</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">obj</code> <code class="p">=</code>
+    <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+    <code class="n">index</code><code class="p">:</code> <code class="o">-</code>1
+    <code class="n">push</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">obj</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">obj</code><code class="p">.</code><code class="n">index</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+    <code class="n">pop</code><code class="p">:</code> <code class="o">-&gt;</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">obj</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">obj</code><code class="p">.</code><code class="n">index</code><code class="p">])</code> <code class="o">-&gt;</code>
+        <code class="n">obj</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">obj</code><code class="p">.</code><code class="n">index</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="n">obj</code><code class="p">.</code><code class="n">index</code> <code class="o">-</code><code class="p">=</code> 1 <code class="k">if</code> <code class="n">obj</code><code class="p">.</code><code class="n">index</code> <code class="o">&gt;</code><code class="p">=</code> 0
+        <code class="n">value</code>
+    <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+      <code class="n">obj</code><code class="p">.</code><code class="n">index</code> <code class="o">&lt;</code> 0
+
+<code class="n">stack</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">push</code><code class="p">(</code><code class="s">'hello'</code><code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'hello'</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">push</code><code class="p">(</code><code class="s">'CoffeeScript'</code><code class="p">)</code>
+ #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'CoffeeScript'</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">pop</code><code class="p">()</code>
+ #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'CoffeeScript'</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">pop</code><code class="p">()</code>
+ #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'hello'</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<h4 id="method-ology">method-ology</h4>
+
+<p>In this text, we lurch from talking about functions belong to an object to methods. Other languages may separate methods from functions very strictly, but in CoffeeScript every method is a function but not all functions are methods.</p>
+
+<p>The view taken in this book is that a function is a method of an object if it belongs to that object and interacts with that object in some way. So the functions implementing the operations on the queue are all absolutely methods of the queue.</p>
+
+<p>But these wouldn&#x2019;t be methods. Although they belong to an object, they don&#x2019;t interact with it:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code>
+  <code class="n">min</code><code class="p">:</code> <code class="p">(</code><code class="n">x</code><code class="p">,</code> <code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="k">if</code> <code class="n">x</code> <code class="o">&lt;</code> <code class="n">y</code> <code class="n">then</code> <code class="n">x</code> <code class="k">else</code> <code class="n">y</code>
+  <code class="n">max</code><code class="p">:</code> <code class="p">(</code><code class="n">x</code><code class="p">,</code> <code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="k">if</code> <code class="n">x</code> <code class="o">&gt;</code> <code class="n">y</code> <code class="n">then</code> <code class="n">x</code> <code class="k">else</code> <code class="n">y</code>
+<code class="p">}</code>
+</pre></div>
+
+</div>
+
+<h4 id="hiding-state">hiding state</h4>
+
+<p>Our stack does bundle functions with data, but it doesn&#x2019;t hide its state. &#x201C;Foreign&#x201D; code could interfere with its array or index. So how do we hide these? We already have a closure, let&#x2019;s use it:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">stack</code> <code class="p">=</code> <code class="n">do</code> <code class="p">(</code><code class="n">array</code> <code class="p">=</code> <code class="p">[],</code> <code class="n">index</code> <code class="p">=</code> <code class="o">-</code>1<code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">push</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">array</code><code class="p">[</code><code class="n">index</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+  <code class="n">pop</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">array</code><code class="p">[</code><code class="n">index</code><code class="p">])</code> <code class="o">-&gt;</code>
+      <code class="n">array</code><code class="p">[</code><code class="n">index</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+      <code class="n">index</code> <code class="o">-</code><code class="p">=</code> 1 <code class="k">if</code> <code class="n">index</code> <code class="o">&gt;</code><code class="p">=</code> 0
+      <code class="n">value</code>
+  <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">index</code> <code class="o">&lt;</code> 0
+
+<code class="n">stack</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">push</code><code class="p">(</code><code class="s">'hello'</code><code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'hello'</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">push</code><code class="p">(</code><code class="s">'CoffeeScript'</code><code class="p">)</code>
+ #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'CoffeeScript'</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">pop</code><code class="p">()</code>
+ #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'CoffeeScript'</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">pop</code><code class="p">()</code>
+ #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'hello'</code>
+<code class="n">stack</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<div class="image-with-caption">
+  <p><img src="images/coffee-trees-1200.jpg" alt="Coffee DOES grow on trees" /></p><p>Coffee DOES grow on trees</p>
+</div>
+
+<p>We don&#x2019;t want to repeat this code every time we want a stack, so let&#x2019;s make ourselves a &#x201C;stack maker:&#x201D;</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">StackMaker</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">array</code> <code class="p">=</code> <code class="p">[],</code> <code class="n">index</code> <code class="p">=</code> <code class="o">-</code>1<code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">push</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">array</code><code class="p">[</code><code class="n">index</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+    <code class="n">pop</code><code class="p">:</code> <code class="o">-&gt;</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">array</code><code class="p">[</code><code class="n">index</code><code class="p">])</code> <code class="o">-&gt;</code>
+        <code class="n">array</code><code class="p">[</code><code class="n">index</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="n">index</code> <code class="o">-</code><code class="p">=</code> 1 <code class="k">if</code> <code class="n">index</code> <code class="o">&gt;</code><code class="p">=</code> 0
+        <code class="n">value</code>
+    <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+      <code class="n">index</code> <code class="o">&lt;</code> 0
+
+<code class="n">stack</code> <code class="p">=</code> <code class="n">StackMaker</code><code class="p">()</code>
+</pre></div>
+
+</div>
+
+<p>Now we can make stacks freely, and we&#x2019;ve hidden their internal data elements. We have methods and encapsulation, and we&#x2019;ve built them out of CoffeeScript&#x2019;s fundamental functions and objects. In <a href="chap05.html#methods">Instances and Classes</a>, we&#x2019;ll look at CoffeeScript&#x2019;s support for class-oriented programming and some of the idioms that functions bring to the party.</p>
+
+<div class="aside sidebarish">
+  <hr /><h4 id="is-encapsulation-object-oriented">is encapsulation &#x201C;object-oriented?&#x201D;</h4>
+
+  <p>We&#x2019;ve built something with hidden internal state and &#x201C;methods,&#x201D; all without needing special <code>def</code> or <code>private</code> keywords. Mind you, we haven&#x2019;t included all sorts of complicated mechanisms to support inheritance, mixins, and other opportunities for debating the nature of the One True Object-Oriented Style on the Internet.</p>
+
+  <p>Then again, the key lesson experienced programmers repeat (although it often falls on deaf ears) is, <a href="http://www.c2.com/cgi/wiki?CompositionInsteadOfInheritance">Composition instead of Inheritance</a>. So maybe we aren&#x2019;t missing much.</p>
+
+  <hr /></div>
+
+<div class="page-break"></div>
+<h3 id="composition">Composition and Extension</h3>
+
+<h4 id="composition">composition</h4>
+
+<p>A deeply fundamental practice is to build components out of smaller components. The choice of how to divide a component into smaller components is called <em>factoring</em>, after the operation in number theory <sup id="fnref-refactoring"><a href="chap07.html#fn-refactoring" rel="footnote">17</a></sup>. </p>
+
+<p>The simplest and easiest way to build components out of smaller components in CoffeeScript is also the most obvious: Each component is a value, and the components can be put together into a single object or encapsulated with a closure.</p>
+
+<p>Here&#x2019;s an abstract &#x201C;model&#x201D; that supports undo and redo composed from a pair of stacks (see <a href="chap04.html#encapsulation">Encapsulating State</a>) and a Plain Old CoffeeScript Object:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="c"># helper function</code>
+<code class="n">shallowCopy</code> <code class="p">=</code> <code class="p">(</code><code class="nb">source</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="k">do</code> <code class="p">(</code><code class="n">dest</code> <code class="p">=</code> <code class="p">{},</code> <code class="n">key</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">,</code> <code class="n">value</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">dest</code><code class="p">[</code><code class="n">key</code><code class="p">]</code> <code class="p">=</code> <code class="n">value</code> <code class="k">for</code> <code class="n">own</code> <code class="n">key</code><code class="p">,</code> <code class="n">value</code> <code class="n">of</code> <code class="nb">source</code>
+    <code class="n">dest</code>
+
+<code class="c"># our model maker</code>
+<code class="n">ModelMaker</code> <code class="p">=</code> <code class="p">(</code><code class="n">initialAttributes</code> <code class="p">=</code> <code class="p">{})</code> <code class="o">-&gt;</code>
+  <code class="k">do</code> <code class="p">(</code><code class="n">attributes</code> <code class="p">=</code> <code class="n">shallowCopy</code><code class="p">(</code><code class="n">initialAttributes</code><code class="p">),</code> 
+      <code class="n">undoStack</code> <code class="p">=</code> <code class="n">StackMaker</code><code class="p">(),</code> 
+      <code class="n">redoStack</code> <code class="p">=</code> <code class="n">StackMaker</code><code class="p">(),</code>
+      <code class="n">obj</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">attributes</code> <code class="p">=</code> <code class="n">shallowCopy</code><code class="p">(</code><code class="n">initialAttributes</code><code class="p">)</code>
+    <code class="n">obj</code> <code class="p">=</code> <code class="p">{</code>
+      <code class="k">set</code><code class="p">:</code> <code class="p">(</code><code class="n">attrsToSet</code> <code class="p">=</code> <code class="p">{})</code> <code class="o">-&gt;</code>
+        <code class="n">undoStack</code><code class="p">.</code><code class="n">push</code><code class="p">(</code><code class="n">shallowCopy</code><code class="p">(</code><code class="n">attributes</code><code class="p">))</code>
+        <code class="n">redoStack</code> <code class="p">=</code> <code class="n">StackMaker</code><code class="p">()</code> <code class="n">unless</code> <code class="n">redoStack</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+        <code class="n">attributes</code><code class="p">[</code><code class="n">key</code><code class="p">]</code> <code class="p">=</code> <code class="n">value</code> <code class="k">for</code> <code class="n">own</code> <code class="n">key</code><code class="p">,</code> <code class="n">value</code> <code class="n">of</code> <code class="n">attrsToSet</code>
+        <code class="n">obj</code>
+      <code class="n">undo</code><code class="p">:</code> <code class="p">()</code> <code class="o">-&gt;</code>
+        <code class="n">unless</code> <code class="n">undoStack</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+          <code class="n">redoStack</code><code class="p">.</code><code class="n">push</code><code class="p">(</code><code class="n">shallowCopy</code><code class="p">(</code><code class="n">attributes</code><code class="p">))</code>
+          <code class="n">attributes</code> <code class="p">=</code> <code class="n">undoStack</code><code class="p">.</code><code class="n">pop</code><code class="p">()</code>
+        <code class="n">obj</code>
+      <code class="n">redo</code><code class="p">:</code> <code class="p">()</code> <code class="o">-&gt;</code>
+        <code class="n">unless</code> <code class="n">redoStack</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+          <code class="n">undoStack</code><code class="p">.</code><code class="n">push</code><code class="p">(</code><code class="n">shallowCopy</code><code class="p">(</code><code class="n">attributes</code><code class="p">))</code>
+          <code class="n">attributes</code> <code class="p">=</code> <code class="n">redoStack</code><code class="p">.</code><code class="n">pop</code><code class="p">()</code>
+        <code class="n">obj</code>
+      <code class="k">get</code><code class="p">:</code> <code class="p">(</code><code class="n">key</code><code class="p">)</code> <code class="o">-&gt;</code>
+        <code class="n">attributes</code><code class="p">(</code><code class="n">key</code><code class="p">)</code>
+      <code class="n">has</code><code class="p">:</code> <code class="p">(</code><code class="n">key</code><code class="p">)</code> <code class="o">-&gt;</code>
+        <code class="n">attributes</code><code class="p">.</code><code class="n">hasOwnProperty</code><code class="p">(</code><code class="n">key</code><code class="p">)</code>
+      <code class="n">attributes</code><code class="p">:</code> <code class="o">-&gt;</code>
+        <code class="n">shallowCopy</code><code class="p">(</code><code class="n">attributes</code><code class="p">)</code>
+    <code class="p">}</code>
+    <code class="n">obj</code>
+</pre></div>
+
+</div>
+
+<p>The techniques used for encapsulation work well with composition. In this case, we have a &#x201C;model&#x201D; that hides its attribute store as well as its implementation that is composed of of an undo stack and redo stack.</p>
+
+<h4 id="extensible">extension</h4>
+
+<p>Another practice that many people consider fundamental is to <em>extend</em> an implementation. Meaning, they wish to define a new data structure in terms of adding new operations and semantics to an existing data structure.</p>
+
+<p>Consider a <a href="http://duckduckgo.com/Queue_" title="data_structure">queue</a>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">QueueMaker</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">array</code> <code class="p">=</code> <code class="p">[],</code> <code class="n">head</code> <code class="p">=</code> 0<code class="p">,</code> <code class="n">tail</code> <code class="p">=</code> <code class="o">-</code>1<code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">array</code><code class="p">[</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+    <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+      <code class="k">if</code> <code class="n">tail</code> <code class="o">&gt;</code><code class="p">=</code> <code class="n">head</code>
+        <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">array</code><code class="p">[</code><code class="n">head</code><code class="p">])</code> <code class="o">-&gt;</code>
+          <code class="n">array</code><code class="p">[</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+          <code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+          <code class="n">value</code>
+    <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+      <code class="n">tail</code> <code class="o">&lt;</code> <code class="n">head</code>
+</pre></div>
+
+</div>
+
+<p>Now we wish to create a <a href="https://en.wikipedia.org/wiki/Double-ended_queue" title="Double-ended queue">deque</a> by adding <code>pullTail</code> and <code>pushHead</code> operations to our queue.<sup id="fnref-wasa"><a href="chap07.html#fn-wasa" rel="footnote">18</a></sup> Unfortunately, encapsulation prevents us from adding operations that interact with the hidden data structures.</p>
+
+<p>This isn&#x2019;t really surprising: The entire point of encapsulation is to create an opaque data structure that can only be manipulated through its public interface. The design goals of encapsulation and extension are always going to exist in tension.</p>
+
+<p>Let&#x2019;s &#x201C;de-encapsulate&#x201D; our queue:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">QueueMaker</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">queue</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">queue</code> <code class="p">=</code> 
+      <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+      <code class="n">head</code><code class="p">:</code> 0
+      <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+      <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+        <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">queue</code><code class="p">.</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+      <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+        <code class="n">unless</code> <code class="n">queue</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+          <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">queue</code><code class="p">.</code><code class="n">head</code><code class="p">])</code> <code class="o">-&gt;</code>
+            <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">queue</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+            <code class="n">queue</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+            <code class="n">value</code>
+      <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+        <code class="n">queue</code><code class="p">.</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="n">queue</code><code class="p">.</code><code class="n">head</code>
+</pre></div>
+
+</div>
+
+<p>Now we can extend a queue into a deque, with a little help from a helper function <code>extend</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="c"># helper function</code>
+<code class="n">extend</code> <code class="p">=</code> <code class="p">(</code><code class="n">object</code><code class="p">,</code> <code class="n">extensions</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">object</code><code class="p">[</code><code class="n">key</code><code class="p">]</code> <code class="p">=</code> <code class="n">value</code> <code class="k">for</code> <code class="n">key</code><code class="p">,</code> <code class="n">value</code> <code class="n">of</code> <code class="n">extensions</code>
+  <code class="n">object</code>
+
+<code class="c"># a deque maker</code>
+<code class="n">DequeMaker</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="k">do</code> <code class="p">(</code><code class="n">deque</code> <code class="p">=</code> <code class="n">QueueMaker</code><code class="p">())</code> <code class="o">-&gt;</code>
+    <code class="n">extend</code><code class="p">(</code><code class="n">deque</code><code class="p">,</code>
+      <code class="nb">size</code><code class="p">:</code> <code class="o">-&gt;</code>
+        <code class="n">deque</code><code class="p">.</code><code class="n">tail</code> <code class="o">-</code> <code class="n">deque</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code> 1
+      <code class="n">pullTail</code><code class="p">:</code> <code class="o">-&gt;</code>
+        <code class="n">unless</code> <code class="n">deque</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+          <code class="k">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">deque</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">deque</code><code class="p">.</code><code class="n">tail</code><code class="p">])</code> <code class="o">-&gt;</code>
+            <code class="n">deque</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">deque</code><code class="p">.</code><code class="n">tail</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+            <code class="n">deque</code><code class="p">.</code><code class="n">tail</code> <code class="o">-=</code> 1
+            <code class="n">value</code>
+      <code class="n">pushHead</code><code class="p">:</code> <code class="k">do</code> <code class="p">(</code><code class="n">INCREMENT</code> <code class="p">=</code> 4<code class="p">)</code> <code class="o">-&gt;</code>
+        <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+          <code class="k">if</code> <code class="n">deque</code><code class="p">.</code><code class="n">head</code> <code class="n">is</code> 0
+            <code class="k">for</code> <code class="n">i</code> <code class="n">in</code> <code class="p">[</code><code class="n">deque</code><code class="p">.</code><code class="n">tail</code><code class="p">..</code><code class="n">deque</code><code class="p">.</code><code class="n">head</code><code class="p">]</code>
+              <code class="n">deque</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">i</code> <code class="o">+</code> <code class="n">INCREMENT</code><code class="p">]</code> <code class="p">=</code> <code class="n">deque</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">i</code><code class="p">]</code>
+            <code class="n">deque</code><code class="p">.</code><code class="n">tail</code> <code class="o">+=</code> <code class="n">INCREMENT</code>
+            <code class="n">deque</code><code class="p">.</code><code class="n">head</code> <code class="o">+=</code> <code class="n">INCREMENT</code>
+          <code class="n">deque</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">deque</code><code class="p">.</code><code class="n">head</code> <code class="o">-=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+    <code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Presto, we have reuse through extension, at the cost of encapsulation.</p>
+
+<div class="tip sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" />Encapsulation and Extension exist in a natural state of tension. A program with elaborate encapsulation resists breakage but can also be difficult to refactor in other ways. Be mindful of when it&#x2019;s best to Compose and when it&#x2019;s best to Extend.</p>
+
+  <hr /></div>
+
+<div class="page-break"></div>
+<h3 id="this">This and That</h3>
+
+<p>Let&#x2019;s take another look at <a href="chap04.html#extensible">extensible objects</a>. Here&#x2019;s a Queue:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">QueueMaker</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">queue</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">queue</code> <code class="p">=</code> 
+      <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+      <code class="n">head</code><code class="p">:</code> 0
+      <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+      <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+        <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">queue</code><code class="p">.</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+      <code class="n">pullHead</code><code class="p">:</code> <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+                  <code class="o">-&gt;</code>
+                    <code class="n">unless</code> <code class="n">queue</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+                      <code class="n">value</code> <code class="p">=</code> <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">queue</code><code class="p">.</code><code class="n">head</code><code class="p">]</code>
+                      <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">queue</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+                      <code class="n">queue</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+                      <code class="n">value</code>
+      <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+        <code class="n">queue</code><code class="p">.</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="n">queue</code><code class="p">.</code><code class="n">head</code>
+
+<code class="n">queue</code> <code class="p">=</code> <code class="n">QueueMaker</code><code class="p">()</code>
+<code class="n">queue</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="s">'Hello'</code><code class="p">)</code>
+<code class="n">queue</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="s">'CoffeeScript'</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Let&#x2019;s make a copy of our queue using a handy <code>extend</code> function and a comprehension to make sure we copy the array properly:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">extend</code> <code class="p">=</code> <code class="p">(</code><code class="n">object</code><code class="p">,</code> <code class="n">extensions</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">object</code><code class="p">[</code><code class="n">key</code><code class="p">]</code> <code class="p">=</code> <code class="n">value</code> <code class="k">for</code> <code class="n">key</code><code class="p">,</code> <code class="n">value</code> <code class="n">of</code> <code class="n">extensions</code>
+  <code class="n">object</code>
+
+<code class="n">copyOfQueue</code> <code class="p">=</code> <code class="n">extend</code><code class="p">({},</code> <code class="n">queue</code><code class="p">)</code>
+<code class="n">copyOfQueue</code><code class="p">.</code><code class="n">array</code> <code class="p">=</code> <code class="p">(</code><code class="n">element</code> <code class="k">for</code> <code class="n">element</code> <code class="n">in</code> <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">)</code>
+
+<code class="n">queue</code> <code class="n">isnt</code> <code class="n">copyOfQueue</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>And start playing with our copies:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">copyOfQueue</code><code class="p">.</code><code class="n">pullHead</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'Hello'</code>
+  
+<code class="n">queue</code><code class="p">.</code><code class="n">pullHead</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'CoffeeScript'</code>
+</pre></div>
+
+</div>
+
+<p>What!? Even though we carefully made a copy of the array to prevent aliasing, it seems that our two queues behave like aliases of each other. The problem is that while we&#x2019;ve carefully copied our array and other elements over, the closures all share the same environment, and therefore the functions in <code>copyOfQueue</code> all operate on the first queue.</p>
+
+<div class="aside sidebarish">
+  <hr /><p>This is a general issue with closures. Closures couple functions to environments, and that makes them very elegant in the small, and very handy for making opaque data structures. Alas, their strength in the small is their weakness in the large. When you&#x2019;re trying to make reusable components, this coupling is sometimes a hindrance.</p>
+
+  <hr /></div>
+
+<p>Let&#x2019;s take an impossibly optimistic flight of fancy:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">AmnesiacQueueMaker</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+  <code class="n">head</code><code class="p">:</code> 0
+  <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+  <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">myself</code><code class="p">,</code> <code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">myself</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">myself</code><code class="p">.</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+  <code class="n">pullHead</code><code class="p">:</code> <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+              <code class="p">(</code><code class="n">myself</code><code class="p">)</code> <code class="o">-&gt;</code>
+                <code class="n">unless</code> <code class="n">myself</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">(</code><code class="n">myself</code><code class="p">)</code>
+                  <code class="n">value</code> <code class="p">=</code> <code class="n">myself</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">myself</code><code class="p">.</code><code class="n">head</code><code class="p">]</code>
+                  <code class="n">myself</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">myself</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+                  <code class="n">myself</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+                  <code class="n">value</code>
+  <code class="n">isEmpty</code><code class="p">:</code> <code class="p">(</code><code class="n">myself</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">myself</code><code class="p">.</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="n">myself</code><code class="p">.</code><code class="n">head</code>
+
+<code class="n">queueWithAmnesia</code> <code class="p">=</code> <code class="n">AmnesiacQueueMaker</code><code class="p">()</code>
+<code class="n">queueWithAmnesia</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="n">queueWithAmnesia</code><code class="p">,</code> <code class="s">'Hello'</code><code class="p">)</code>
+<code class="n">queueWithAmnesia</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="n">queueWithAmnesia</code><code class="p">,</code> <code class="s">'CoffeeScript'</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>The <code>AmnesiacQueueMaker</code> makes queues with amnesia: They don&#x2019;t know who they are, so every time we invoke one of their functions, we have to tell them who they are. You can work out the implications for copying queues as a thought experiment: We don&#x2019;t have to worry about environments, because every function operates on the queue you pass in.</p>
+
+<p>The killer drawback, of course, is making sure we are always passing the correct queue in every time we invoke a function. What to do?</p>
+
+<h4 id="whats-all-this">what&#x2019;s all <code>this</code>?</h4>
+
+<p>Any time we must do the same repetitive thing over and over and over again, we industrial humans try to build a machine to do it for us. CoffeeScript is one such machine:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">BanksQueueMaker</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+  <code class="n">head</code><code class="p">:</code> 0
+  <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+  <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+  <code class="n">pullHead</code><code class="p">:</code> <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+              <code class="o">-&gt;</code>
+                <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+                  <code class="n">value</code> <code class="p">=</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code>
+                  <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+                  <code class="n">this</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+                  <code class="n">value</code>
+  <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="n">this</code><code class="p">.</code><code class="n">head</code>
+
+<code class="n">banksQueue</code> <code class="p">=</code> <code class="n">BanksQueueMaker</code><code class="p">()</code>
+<code class="n">banksQueue</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="s">'Hello'</code><code class="p">)</code>
+<code class="n">banksQueue</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="s">'CoffeeScript'</code><code class="p">)</code> 
+</pre></div>
+
+</div>
+
+<p>Every time you invoke a function that is a member of an object, CoffeeScript binds that object to the name <code>this</code> in the environment of the function just as if it was an argument.<sup id="fnref-this"><a href="chap07.html#fn-this" rel="footnote">19</a></sup> Now we can easily make copies:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">copyOfQueue</code> <code class="p">=</code> <code class="n">extend</code><code class="p">({},</code> <code class="n">banksQueue</code><code class="p">)</code>
+<code class="n">copyOfQueue</code><code class="p">.</code><code class="n">array</code> <code class="p">=</code> <code class="p">(</code><code class="n">element</code> <code class="k">for</code> <code class="n">element</code> <code class="n">in</code> <code class="n">banksQueue</code><code class="p">.</code><code class="n">array</code><code class="p">)</code>
+
+<code class="n">copyOfQueue</code><code class="p">.</code><code class="n">pullHead</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'Hello'</code>
+  
+<code class="n">banksQueue</code><code class="p">.</code><code class="n">pullHead</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'Hello'</code>
+</pre></div>
+
+</div>
+
+<p>Presto, we now have a way to copy arrays. By getting rid of the closure and taking advantage of <code>this</code>, we have functions that are more easily portable between objects, and the code is simpler as well.</p>
+
+<div class="tip sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" />Closures tightly couple functions to the environments where they are created limiting their flexibility. Using <code>this</code> alleviates the coupling. Copying objects is but one example of where that flexibility is needed.</p>
+
+  <hr /></div>
+
+<h4 id="fat-arrows-are-the-cure-for-obese-idioms">fat arrows are the cure for obese idioms</h4>
+
+<p>Wait a second! Let&#x2019;s flip back <a href="chap04.html#extensible" title="extension">a few pages</a> and look at the code for a Queue:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">QueueMaker</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">queue</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">queue</code> <code class="p">=</code> 
+      <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+      <code class="n">head</code><code class="p">:</code> 0
+      <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+      <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+        <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">queue</code><code class="p">.</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+      <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+        <code class="n">unless</code> <code class="n">queue</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+          <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">queue</code><code class="p">.</code><code class="n">head</code><code class="p">])</code> <code class="o">-&gt;</code>
+            <code class="n">queue</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">queue</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+            <code class="n">queue</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+            <code class="n">value</code>
+      <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+        <code class="n">queue</code><code class="p">.</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="n">queue</code><code class="p">.</code><code class="n">head</code>
+</pre></div>
+
+</div>
+
+<p>Spot the difference? Here&#x2019;s the <code>pullHead</code> function we&#x2019;re using now:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">pullHead</code><code class="o">:</code> <code class="k">do</code> <code class="o">(</code><code class="n">value</code> <code class="o">=</code> <code class="kc">undefined</code><code class="o">)</code> <code class="o">-&gt;</code>
+            <code class="o">-&gt;</code>
+              <code class="n">unless</code> <code class="k">this</code><code class="o">.</code><code class="na">isEmpty</code><code class="o">()</code>
+                <code class="n">value</code> <code class="o">=</code> <code class="k">this</code><code class="o">.</code><code class="na">array</code><code class="o">[</code><code class="k">this</code><code class="o">.</code><code class="na">head</code><code class="o">]</code>
+                <code class="k">this</code><code class="o">.</code><code class="na">array</code><code class="o">[</code><code class="k">this</code><code class="o">.</code><code class="na">head</code><code class="o">]</code> <code class="o">=</code> <code class="kc">undefined</code>
+                <code class="k">this</code><code class="o">.</code><code class="na">head</code> <code class="o">+=</code> <code class="mi">1</code>
+                <code class="n">value</code>
+</pre></div>
+
+</div>
+
+<p>Sneaky: The version of the <code>pullHead</code> function moves the <code>do</code> outside the function. Why? Let&#x2019;s rewrite it to look like the old version:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+  <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">])</code> <code class="o">-&gt;</code>
+      <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+      <code class="n">this</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+      <code class="n">value</code>
+</pre></div>
+
+</div>
+
+<p>Notice that we have a function. We invoke it, and <code>this</code> is set to our object. Then, thanks to the <code>do</code>, we invoke another function inside that. The function invoked by the <code>do</code> keyword does not belong to our object, so <code>this</code> is not set to our object. Oops!</p>
+
+<div class="aside sidebarish">
+  <hr /><p>Interestingly, this showcases one of CoffeeScripts greatest strengths and weaknesses. Since everything&#x2019;s a function, we have a set of tools that interoperate on everything the exact same way. However, there are some ways that functions don&#x2019;t appear to do exactly what we think they&#x2019;ll do.</p>
+
+  <p>For example, if you put a <code>return 'foo'</code> inside a <code>do</code>, you don&#x2019;t return from the function enclosing the do, you return from the <code>do</code> itself. And as we see, <code>this</code> gets set &#x201C;incorrectly.&#x201D; The Ruby programming language tries to solve this problem by having something&#x2013;blocks&#x2013;that look a lot like functions, but act more like syntax. The cost of that decision, of course, is that you have two different kinds of things that look similar but behave differently. (Make that five: Ruby has unbound methods, bound methods, procs, lambdas, and blocks.)</p>
+
+  <hr /></div>
+
+<p>There are two solutions. The error-prone workaround is to write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+  <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">],</code> <code class="n">that</code> <code class="p">=</code> <code class="n">this</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">that</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">that</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+      <code class="n">that</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+      <code class="n">value</code>
+</pre></div>
+
+</div>
+
+<p>Besides its lack of pulchritude, there are many opportunities to mistakingly write <code>this</code> when you meant to write <code>that</code>. Or <code>that</code> for <code>this</code>. Or something, especially when refactoring some code.</p>
+
+<p>The better way is to force the function to have the <code>this</code> you want. CoffeeScript gives you the &#x201C;fat arrow&#x201D; or <code>=&gt;</code> for this purpose. Here it is:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+  <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+      <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+      <code class="n">this</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+      <code class="n">value</code>
+</pre></div>
+
+</div>
+
+<p>The fat arrow says, &#x201C;Treat this function as if we did the <code>this</code> and <code>that</code> idiom, so that whenever I refer to <code>this</code>, I get the outer one.&#x201D; Which is exactly what we want if we don&#x2019;t care to rearrange our code.</p>
+
+<div class="page-break"></div>
+<h3 id="summary-objects-mutation-and-state">Summary: Objects, Mutation, and State</h3>
+
+<div class="image-with-caption">
+  <p><img src="images/red-diedrich-roaster.jpg" alt="This summary is still being roasted to perfection. Thanks for your patience!" /></p><p>This summary is still being roasted to perfection. Thanks for your patience!</p>
+</div>
+</div>
+<div id="leanpub-toc">
+<h2>Table of Contents</h2>
+<ol class="toc">
+<li class="chapter"><a href="chap00.html#a-pull-of-the-lever-prefaces">A Pull of the Lever: Prefaces</a></li>
+<li class="section"><a href="chap00.html#about-this-book">About This Book</a></li>
+<li class="section"><a href="chap00.html#legend">Legend</a></li>
+<li class="chapter"><a href="chap01.html#prelude-values-and-expressions">Prelude: Values and Expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-expressions">values and expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-identity">values and identity</a></li>
+<li class="chapter"><a href="chap02.html#functions">The first sip: Functions</a></li>
+<li class="section"><a href="chap02.html#as-little-as-possible-about-functions-but-no-less">As Little As Possible About Functions, But No Less</a></li>
+<li class="section"><a href="chap02.html#fargs">Ah. I&#x2019;d Like to Have an Argument, Please.<sup id="fnref-mp">
+  <a href="chap07.html#fn-mp" rel="footnote">6</a>
+</sup></a></li>
+<li class="section"><a href="chap02.html#closures">Closures and Scope</a></li>
+<li class="section"><a href="chap02.html#a-simple-question">A Simple Question</a></li>
+<li class="section"><a href="chap02.html#summary-functions">Summary: Functions</a></li>
+<li class="chapter"><a href="chap03.html#more-functions">Slurp: More About Functions and Scope</a></li>
+<li class="section"><a href="chap03.html#let-me-show-you-what-to-do">Let Me Show You What To Do</a></li>
+<li class="section"><a href="chap03.html#making-things-easy">Making Things Easy</a></li>
+<li class="section"><a href="chap03.html#poco">References, Identity, Arrays, and Objects</a></li>
+<li class="section"><a href="chap03.html#summary-more-about-functions-and-scope">Summary: More About Functions And Scope</a></li>
+<li class="chapter"><a href="chap04.html#mutable">Stir the Espresso: Objects, Mutation, and State</a></li>
+<li class="section"><a href="chap04.html#reassignment-and-mutation">Reassignment and Mutation</a></li>
+<li class="section"><a href="chap04.html#normal-case-variables">Normal Case Variables</a></li>
+<li class="section"><a href="chap04.html#comprehensions">Comprehensions</a></li>
+<li class="section"><a href="chap04.html#encapsulation">Encapsulating State with Closures</a></li>
+<li class="section"><a href="chap04.html#composition">Composition and Extension</a></li>
+<li class="section"><a href="chap04.html#this">This and That</a></li>
+<li class="section"><a href="chap04.html#summary-objects-mutation-and-state">Summary: Objects, Mutation, and State</a></li>
+<li class="chapter"><a href="chap05.html#methods">Finish the Cup: Instances and Classes</a></li>
+<li class="section"><a href="chap05.html#prototypes-are-simple-its-the-explanations-that-are-hard-to-understand">Prototypes are Simple, it&#x2019;s the Explanations that are Hard To Understand</a></li>
+<li class="section"><a href="chap05.html#a-touch-of-class">A Touch of Class</a></li>
+<li class="section"><a href="chap05.html#object-methods">Object Methods</a></li>
+<li class="section"><a href="chap05.html#canonicalization">Canonicalization</a></li>
+<li class="section"><a href="chap05.html#this-section-needs-no-title">This Section Needs No Title</a></li>
+<li class="section"><a href="chap05.html#classextension">Extending Classes</a></li>
+<li class="section"><a href="chap05.html#summary-instances-and-classes">Summary: Instances and Classes</a></li>
+<li class="chapter"><a href="chap06.html#extra-shot">An Extra Shot of Ideas</a></li>
+<li class="section"><a href="chap06.html#combinators">Refactoring to Combinators</a></li>
+<li class="section"><a href="chap06.html#method-decorators">Method Decorators</a></li>
+<li class="section"><a href="chap06.html#callbacks-and-promises">Callbacks and Promises</a></li>
+<li class="section"><a href="chap06.html#summary-an-extra-shot-of-ideas">Summary: An Extra Shot of Ideas</a></li>
+<li class="chapter"><a href="chap07.html#a-golden-crema">A Golden Crema</a></li>
+<li class="section"><a href="chap07.html#online">How to run the examples</a></li>
+<li class="section"><a href="chap07.html#thanks">Thanks!</a></li>
+<li class="section"><a href="chap07.html#copyright-notice">Copyright Notice</a></li>
+<li class="section"><a href="chap07.html#about-the-author">About The Author</a></li>
+</ol>
+</div>
+</body>
+</html>

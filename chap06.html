@@ -1,0 +1,770 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>An Extra Shot of Ideas</title>
+<link href="stylesheet.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+<div id="leanpub-main">
+<h2 id="extra-shot">An Extra Shot of Ideas</h2>
+
+<div class="image-with-caption">
+  <p><img src="images/intestines.jpg" alt="The Intestines of an Espresso Machine" /></p><p>The Intestines of an Espresso Machine</p>
+</div>
+
+<div class="page-break"></div>
+<h3 id="combinators">Refactoring to Combinators</h3>
+
+<p>The word &#x201C;combinator&#x201D; has a precise technical meaning in mathematics:</p>
+
+<blockquote>
+  <p>&#x201C;A combinator is a higher-order function that uses only function application and earlier defined combinators to define a result from its arguments.&#x201D;&#x2013;<a href="https://en.wikipedia.org/wiki/Combinatory_logic" title="Combinatory Logic">Wikipedia</a></p>
+</blockquote>
+
+<p>In this book, we will be using a much looser definition of &#x201C;combinator:&#x201D; Pure functions that act on other functions to produce functions. Combinators are the adverbs of functional programming.</p>
+
+<h4 id="memoize">memoize</h4>
+
+<p>Let&#x2019;s begin with an example of a combinator, <code>memoize</code>. Consider that age-old interview quiz, writing a recursive fibonacci function (there are other ways to derive a fibonacci number, of course). Here&#x2019;s simple implementation:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">fibonacci</code> <code class="p">=</code> <code class="p">(</code><code class="n">n</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="k">if</code> <code class="n">n</code> <code class="o">&lt;</code> 2
+    <code class="n">n</code>
+  <code class="k">else</code>
+    <code class="n">fibonacci</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>2<code class="p">)</code> <code class="o">+</code> <code class="n">fibonacci</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>1<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>We&#x2019;ll time it:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">s</code> <code class="p">=</code> <code class="p">(</code><code class="n">new</code> <code class="n">Date</code><code class="p">()).</code><code class="n">getTime</code><code class="p">()</code>
+<code class="n">new</code> <code class="n">Fibonacci</code><code class="p">(</code>45<code class="p">).</code><code class="n">toInt</code><code class="p">()</code>
+<code class="p">(</code> <code class="p">(</code><code class="n">new</code> <code class="n">Date</code><code class="p">()).</code><code class="n">getTime</code><code class="p">()</code> <code class="o">-</code> <code class="n">s</code> <code class="p">)</code> <code class="o">/</code> 1000
+  #<code class="p">=</code><code class="o">&gt;</code> 28<code class="p">.</code>565
+</pre></div>
+
+</div>
+
+<p>Why is it so slow? Well, it has a nasty habit of recalculating the same results over and over and over again. We could rearrange the computation to avoid this, but let&#x2019;s be lazy and trade space for time. What we want to do is use a lookup table. Whenever we want a result, we look it up. If we don&#x2019;t have it, we calculate it and write the result in the table to use in the future. If we do have it, we return the result without recalculating it.</p>
+
+<p>We could write something specific for fibonacci and then generalize it, but let&#x2019;s skip right to a general solution (we&#x2019;ll discuss extracting a combinator below). First, a new feature. Within any function the name <code>arguments</code> is always bound to an object that behaves like a collection of all the arguments passed to a function. Using <code>arguments</code>, here is a <code>memoize</code> implementation that works for many<sup id="fnref-json"><a href="chap07.html#fn-json" rel="footnote">24</a></sup> kinds of functions:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">memoized</code> <code class="p">=</code> <code class="p">(</code><code class="n">fn</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">lookupTable</code> <code class="p">=</code> <code class="p">{},</code> <code class="n">key</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">,</code> <code class="n">value</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="o">-&gt;</code>
+      <code class="n">key</code> <code class="p">=</code> <code class="n">JSON</code><code class="p">.</code><code class="n">stringify</code><code class="p">(</code><code class="n">arguments</code><code class="p">)</code>
+      <code class="n">lookupTable</code><code class="p">[</code><code class="n">key</code><code class="p">]</code> <code class="n">or</code><code class="p">=</code> <code class="n">fn</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>We can apply <code>memoized</code> to a function and we will get back a new function that memoizes its results.</p>
+
+<p>Let&#x2019;s try it:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">fastFibonacci</code> <code class="p">=</code>
+  <code class="n">memoized</code> <code class="p">(</code><code class="n">n</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="k">if</code> <code class="n">n</code> <code class="o">&lt;</code> 2
+      <code class="n">n</code>
+    <code class="k">else</code>
+      <code class="n">fastFibonacci</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>2<code class="p">)</code> <code class="o">+</code> <code class="n">fastFibonacci</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>1<code class="p">)</code>
+
+<code class="n">fastFibonacci</code><code class="p">(</code>45<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 1134903170
+</pre></div>
+
+</div>
+
+<p>We get the result back instantly. It works!</p>
+
+<div class="exercise sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_exercise.png" alt="exercise" />Exercise:</p>
+
+  <p>Optimistic Ophelia tries the following code:</p>
+
+  <div class="code-block">
+<div class="highlight"><pre><code class="nv">fibonacci = </code><code class="nf">(n) -&gt;</code>
+  <code class="k">if</code> <code class="nx">n</code> <code class="o">&lt;</code> <code class="mi">2</code>
+    <code class="nx">n</code>
+  <code class="k">else</code>
+    <code class="nx">fibonacci</code><code class="p">(</code><code class="nx">n</code><code class="o">-</code><code class="mi">2</code><code class="p">)</code> <code class="o">+</code> <code class="nx">fibonacci</code><code class="p">(</code><code class="nx">n</code><code class="o">-</code><code class="mi">1</code><code class="p">)</code>
+
+<code class="nv">quickFibonacci = </code><code class="nx">memoize</code><code class="p">(</code><code class="nx">fibonacci</code><code class="p">)</code>
+</pre></div>
+  
+</div>
+
+  <p>Does <code>quickFibonacci</code> behave differently than <code>fastFibonacci</code>? Why?</p>
+
+  <hr /></div>
+
+<p>By using a combinator instead of tangling lookup code with the actual &#x201C;domain logic&#x201D; of fibonacci, our <code>fastFibonacci</code> code is easy to read and understand. As a bonus, we DRY up our application, as the same <code>memoize</code> combinator can be used in many different places.</p>
+
+<h4 id="the-once-and-future-combinator-refactoring">the once and future combinator refactoring</h4>
+
+<p>Combinators can often be extracted from your code. The result is cleaner than the kinds of refactorings possible in languages that have less flexible functions. Let&#x2019;s walk through the process of discovering a combinator to get a feel for the refactoring to combinator process.</p>
+
+<p>Some functions should only be evaluated once, but might be invoked more than once. You want to evaluate them the first time they are called, but thereafter ignore the invocation. </p>
+
+<p>We&#x2019;d start with a function like this, it assumes there&#x2019;s some &#x201C;it&#x201D; that needs to be initialized once, and several pieces of code might call this function before using &#x201C;it:&#x201D;</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">ensureItIsInitialized</code> <code class="p">=</code> <code class="n">do</code> <code class="p">(</code><code class="n">itIsInitialized</code> <code class="p">=</code> <code class="n">false</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="n">itIsInitialized</code>
+      <code class="n">itIsInitialized</code> <code class="p">=</code> <code class="n">true</code>
+      # <code class="p">...</code>
+      # <code class="n">initialization</code> <code class="n">code</code>
+      # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>The typical meta-pattern is when several different functions all share a common precondition such as loading certain constant data from a server or initializing a resource. We can see that we&#x2019;re tangling the concern of initializing once with the concern of how to perform the initialization. Let&#x2019;s <a href="http://refactoring.com/catalog/extractMethod.html">extract a method</a>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">initializeIt</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  # <code class="p">...</code>
+  # <code class="n">initialization</code> <code class="n">code</code>
+  # <code class="p">...</code>
+<code class="n">ensureItIsInitialized</code> <code class="p">=</code> <code class="n">do</code> <code class="p">(</code><code class="n">itIsInitialized</code> <code class="p">=</code> <code class="n">false</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="n">itIsInitialized</code>
+      <code class="n">itIsInitialized</code> <code class="p">=</code> <code class="n">true</code>
+      <code class="n">initializeIt</code><code class="p">()</code>
+</pre></div>
+
+</div>
+
+<p>In many other languages, we&#x2019;d stop right there. But in CoffeeScript, we can see that <code>ensureItIsInitialized</code> is much more generic than its name suggests. Let&#x2019;s convert it to a combinator with a slight variation on the <a href="http://www.industriallogic.com/xp/refactoring/extractParamter.html">extracting a parameter</a>. We&#x2019;ll call the combinator <code>once</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">once</code> <code class="p">=</code> <code class="p">(</code><code class="n">fn</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">done</code> <code class="p">=</code> <code class="n">false</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="o">-&gt;</code>
+      <code class="n">unless</code> <code class="n">done</code>
+        <code class="n">done</code> <code class="p">=</code> <code class="n">true</code>
+        <code class="n">fn</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>And now our code is very clean:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">initializeIt</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  # <code class="p">...</code>
+  # <code class="n">initialization</code> <code class="n">code</code>
+  # <code class="p">...</code>
+<code class="n">ensureItIsInitialized</code> <code class="p">=</code> <code class="n">once</code><code class="p">(</code><code class="n">initializeIt</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>This is so clean you could get rid of <code>initializeIt</code> as a named function:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">ensureItIsInitialized</code> <code class="p">=</code> <code class="n">once</code> <code class="o">-&gt;</code>
+  # <code class="p">...</code>
+  # <code class="n">initialization</code> <code class="n">code</code>
+  # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>The concept of a combinator is more important than having a specific portfolio of combinators at your fingertips (although that is always nice). The meta-pattern is that when you are working with a function, identify the core &#x201C;domain logic&#x201D; the function should express. Try to extract that and turn what is left into one or more combinators that take functions as parameters rather than single-purpose methods.</p>
+
+<p>(The <code>memoize</code> and <code>once</code> combinators are available in the <a href="http://underscorejs.org">underscore.js</a> library along with several other handy functions that operate on functions such as <code>throttle</code> and <code>debounce</code>.)</p>
+
+<h4 id="composition-and-combinators">Composition and Combinators</h4>
+
+<p>Although you can write nearly any function and use it as a combinator, one property that is nearly essential is <em>composability</em>. It should be possible to pass the result of one combinator as the argument to another.</p>
+
+<p>Let&#x2019;s consider this combinator as an example:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">requiresValues</code> <code class="p">=</code> <code class="p">(</code><code class="n">fn</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="o">-&gt;</code>
+    <code class="n">throw</code> "<code class="n">Value</code> <code class="n">Required</code>" <code class="n">unless</code> <code class="n">arg</code>? <code class="k">for</code> <code class="n">arg</code> <code class="n">in</code> <code class="n">arguments</code>
+    <code class="n">fn</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>And this one:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">requiresReturnValue</code> <code class="p">=</code> <code class="p">(</code><code class="n">fn</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="o">-&gt;</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">result</code> <code class="p">=</code> <code class="n">fn</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">))</code> <code class="o">-&gt;</code>
+      <code class="n">throw</code> "<code class="n">Value</code> <code class="n">Required</code>" <code class="n">unless</code> <code class="n">result</code>?
+      <code class="n">result</code>
+</pre></div>
+
+</div>
+
+<p>You can use <em>both</em> of these combinators and the <code>once</code> combinator on a function to add some runtime validation that both input arguments and the returned value are defined:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">checkedFibonacci</code> <code class="p">=</code> <code class="n">once</code> <code class="n">requiresValues</code> <code class="n">requiresReturnValue</code> <code class="p">(</code><code class="n">n</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="k">if</code> <code class="n">n</code> <code class="o">&lt;</code> 2
+    <code class="n">n</code>
+  <code class="k">else</code>
+    <code class="n">fibonacci</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>2<code class="p">)</code> <code class="o">+</code> <code class="n">fibonacci</code><code class="p">(</code><code class="n">n</code><code class="o">-</code>1<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Combinators should be designed by default to compose. And speaking of composition, it&#x2019;s easy to compose functions in CoffeeScript:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">checkBoth</code> <code class="p">=</code> <code class="p">(</code><code class="n">fn</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">requiresValues</code> <code class="n">requiresReturnValue</code> <code class="n">fn</code>
+</pre></div>
+
+</div>
+
+<p>Libraries like <a href="http://osteele.com/sources/javascript/functional/">Functional</a> also provide <code>compose</code> and <code>sequence</code> functions, so you can write things like:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">checkBoth</code> <code class="p">=</code> <code class="n">Functional</code><code class="p">.</code><code class="n">compose</code><code class="p">(</code><code class="n">requiresValues</code><code class="p">,</code> <code class="n">requiresReturnValue</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>All of this is made possible by the simple property of <em>composability</em>, the property of combinators taking a function as an argument and returning a function that operates on the same arguments and returns something meaningful to code expecting to call the original function.</p>
+
+<div class="page-break"></div>
+<h3 id="method-decorators">Method Decorators</h3>
+
+<p>Now that we&#x2019;ve seen how function combinators can make our code cleaner and DRYer, it isn&#x2019;t a great leap to ask if we can use combinators with methods. After all, methods are functions. That&#x2019;s one of the great strengths of CoffeeScript, since methods are &#x201C;just&#x201D; functions, we don&#x2019;t need to have one kind of tool for functions and another for methods, or a messy way of turning methods into functions and functions into methods.</p>
+
+<p>And the answer is, &#x201C;Yes we can.&#x201D; With some caveats. Let&#x2019;s get our terminology  synchronized. A combinator is a function that modifies another function. A <em>method decorator</em> is a combinator that modifies a method expression used inline. So, all method decorators are combinators, but not all combinators are method decorators.<sup id="fnref-py"><a href="chap07.html#fn-py" rel="footnote">25</a></sup></p>
+
+<h4 id="decorating-object-methods">decorating object methods</h4>
+
+<p>As you recall, an <a href="chap05.html#object-methods">object method</a> is a method belonging directly to a Plain Old CoffeeScript object or an instance. All combinators work as decorators for object methods. For example:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">LazyInitializedMechanism</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">initialize</code> <code class="p">=</code> <code class="n">once</code> <code class="o">-&gt;</code>
+      # <code class="p">...</code>
+      # <code class="n">complicated</code> <code class="n">stuff</code>
+      # <code class="p">...</code>
+  <code class="n">someInstanceMethod</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">initialize</code><code class="p">()</code>
+    # <code class="p">...</code>
+  <code class="n">anotherInstanceMethod</code><code class="p">:</code> <code class="p">(</code><code class="n">foo</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">initialize</code><code class="p">()</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<h4 id="decorating-constructor-methods">decorating constructor methods</h4>
+
+<p>Decorating constructor methods works just as well as decorating instance methods, for example:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">LazyClazz</code>
+  <code class="p">@</code><code class="n">setUpLazyClazz</code><code class="p">:</code> <code class="n">once</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+    # <code class="n">complicated</code> <code class="n">stuff</code>
+    # <code class="p">...</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">constructor</code><code class="p">.</code><code class="n">setUpLazyClazz</code><code class="p">()</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>For this class, there&#x2019;s some setup to be done, but it&#x2019;s deferred until the first instance is created.</p>
+
+<h4 id="decorating-instance-methods">decorating instance methods</h4>
+
+<p>Decorating instance methods can be tricky if they rely on closures to encapsulate state of any kind. For example, this will not work:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">BrokenMechanism</code>
+  <code class="n">initialize</code><code class="p">:</code> <code class="n">once</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+    # <code class="n">complicated</code> <code class="n">stuff</code>
+    # <code class="p">...</code>
+  <code class="n">someInstanceMethod</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">initialize</code><code class="p">()</code>
+    # <code class="p">...</code>
+  <code class="n">anotherInstanceMethod</code><code class="p">:</code> <code class="p">(</code><code class="n">foo</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">initialize</code><code class="p">()</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>If you have more than one <code>BrokenMechanism</code>, only one will ever be initialized. There is one <code>initialize</code> method, and it belongs to <code>BrokenMechanism.prototype</code>, so once it is called for the first <code>BrokenMechanism</code> instance, all others calling it for the same or different instances will not execute.</p>
+
+<p>The <code>initialize</code> method could be converted from an instance method to an object method as above. An alternate approach is to surrender the perfect encapsulation of <code>done</code>, and write a decorator designed for use on instance methods:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">once</code> <code class="p">=</code> <code class="p">(</code><code class="n">name</code><code class="p">,</code> <code class="n">method</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="p">@[</code><code class="n">name</code><code class="p">]</code>
+      <code class="p">@[</code><code class="n">name</code><code class="p">]</code> <code class="p">=</code> <code class="n">true</code>
+      <code class="n">method</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Now the flag for being done has been changed to an element of the instance, and we use it like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">WorkingMechanism</code>
+  <code class="n">initialize</code><code class="p">:</code> <code class="n">once</code> <code class="s">'doneInitializing'</code><code class="p">,</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+    # <code class="n">complicated</code> <code class="n">stuff</code>
+    # <code class="p">...</code>
+  <code class="n">someInstanceMethod</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">initialize</code><code class="p">()</code>
+    # <code class="p">...</code>
+  <code class="n">anotherInstanceMethod</code><code class="p">:</code> <code class="p">(</code><code class="n">foo</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">initialize</code><code class="p">()</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>Since the flag is stored in the instance, the one function works with all instances. (You do need to make sure that each method using the decorator has its own unique name.)</p>
+
+<h4 id="a-decorator-for-fluent-interfaces">a decorator for fluent interfaces</h4>
+
+<p><a href="https://en.wikipedia.org/wiki/Fluent_interface">Fluent interfaces</a> are a style of API often used for configuration. The principle is to return an instance that has meaningful methods for the next thing you want to do. The simplest (but not only) type of fluent interface is a cascade of methods configuring the same object, such as:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">car</code> <code class="p">=</code> <code class="n">new</code> <code class="n">Automobile</code><code class="p">()</code>
+  <code class="p">.</code><code class="n">withBucketSeats</code><code class="p">(</code>2<code class="p">)</code>
+  <code class="p">.</code><code class="n">withStandardTransmission</code><code class="p">(</code>5<code class="p">)</code>
+  <code class="p">.</code><code class="n">withDoors</code><code class="p">(</code>4<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>To implement an interface with this simple API, methods need to return <code>this</code>. It&#x2019;s one line and easy to do, but you look at the top of the method to see its name and the bottom of the method to see what it returns. If there are multiple return paths, you must take care that they all return <code>this</code>.</p>
+
+<p>It&#x2019;s easy to write a fluent decorator:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">fluent</code> <code class="p">=</code> <code class="p">(</code><code class="n">method</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="o">-&gt;</code>
+    <code class="n">method</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">)</code>
+    <code class="n">this</code>
+</pre></div>
+
+</div>
+
+<p>And it&#x2019;s easy to use:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Automobile</code>
+    <code class="n">withBucketSeats</code><code class="p">:</code> <code class="n">fluent</code> <code class="p">(</code><code class="n">num</code><code class="p">)</code> <code class="o">-&gt;</code>
+      # <code class="p">...</code>
+    <code class="n">withStandardTransmission</code><code class="p">:</code> <code class="n">fluent</code> <code class="p">(</code><code class="n">gears</code><code class="p">)</code> <code class="o">-&gt;</code>
+      # <code class="p">...</code>
+    <code class="n">withDoors</code><code class="p">:</code> <code class="n">fluent</code> <code class="p">(</code><code class="n">num</code><code class="p">)</code> <code class="o">-&gt;</code>
+      # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<h4 id="combinators-for-making-decorators">combinators for making decorators</h4>
+
+<p>Quite a few of the examples involve initializing something before doing some work. This is a very common pattern: Do something <em>before</em> invoking a method. Can we extract that into a combinator? Certainly. Here&#x2019;s a combinator that takes a method and returns a decorator:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">before</code> <code class="p">=</code>
+  <code class="p">(</code><code class="n">decoration</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">(</code><code class="n">base</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="o">-&gt;</code>
+        <code class="n">decoration</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">)</code>
+        <code class="n">base</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>You would use it like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">forcesInitialize</code> <code class="p">=</code> <code class="n">before</code> <code class="o">-&gt;</code> <code class="p">@</code><code class="n">initialize</code><code class="p">()</code>
+
+<code class="n">class</code> <code class="n">WorkingMechanism</code>
+  <code class="n">initialize</code><code class="p">:</code> <code class="n">once</code> <code class="s">'doneInitializing'</code><code class="p">,</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+    # <code class="n">complicated</code> <code class="n">stuff</code>
+    # <code class="p">...</code>
+  <code class="n">someInstanceMethod</code><code class="p">:</code> <code class="n">forcesInitialize</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+  <code class="n">anotherInstanceMethod</code><code class="p">:</code> <code class="n">forcesInitialize</code> <code class="p">(</code><code class="n">foo</code><code class="p">)</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>Of course, you could put anything in there, including the initialization code if you wanted to:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">WorkingMechanism</code>
+  <code class="n">forcesInitialize</code> <code class="p">=</code> <code class="n">before</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+    # <code class="n">complicated</code> <code class="n">stuff</code>
+    # <code class="p">...</code>
+  <code class="n">someInstanceMethod</code><code class="p">:</code> <code class="n">forcesInitialize</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+  <code class="n">anotherInstanceMethod</code><code class="p">:</code> <code class="n">forcesInitialize</code> <code class="p">(</code><code class="n">foo</code><code class="p">)</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>When writing decorators, the same few patterns tend to crop up regularly:</p>
+
+<ol><li>You want to do something <em>before</em> the method&#x2019;s base logic is executed.</li>
+  <li>You want to do something <em>after</em> the method&#x2019;s base logic is executed.</li>
+  <li>You want to wrap some logic <em>around</em> the method&#x2019;s base logic.</li>
+  <li>You only want to execute the method&#x2019;s base logic <em>provided</em> some condition is truthy.</li>
+</ol><p>We saw <code>before</code> above. Here are three more combinators that are very useful for writing method decorators:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">this</code><code class="p">.</code><code class="n">after</code> <code class="p">=</code>
+  <code class="p">(</code><code class="n">decoration</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">(</code><code class="n">base</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="o">-&gt;</code>
+        <code class="n">decoration</code><code class="p">.</code><code class="n">call</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">__value__</code> <code class="p">=</code> <code class="n">base</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">))</code>
+        <code class="n">__value__</code>
+
+<code class="n">this</code><code class="p">.</code><code class="n">around</code> <code class="p">=</code>
+  <code class="p">(</code><code class="n">decoration</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">(</code><code class="n">base</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="p">(</code><code class="n">argv</code><code class="p">...)</code> <code class="o">-&gt;</code>
+        <code class="n">__value__</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="n">callback</code> <code class="p">=</code> <code class="p">=</code><code class="o">&gt;</code>
+          <code class="n">__value__</code> <code class="p">=</code> <code class="n">base</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">argv</code><code class="p">)</code>
+        <code class="n">decoration</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="p">[</code><code class="n">callback</code><code class="p">].</code><code class="n">concat</code><code class="p">(</code><code class="n">argv</code><code class="p">))</code>
+        <code class="n">__value__</code>
+
+<code class="n">this</code><code class="p">.</code><code class="n">provided</code> <code class="p">=</code>
+  <code class="p">(</code><code class="n">condition</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">(</code><code class="n">base</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="o">-&gt;</code>
+        <code class="k">if</code> <code class="n">condition</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">)</code>
+          <code class="n">base</code><code class="p">.</code><code class="n">apply</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">arguments</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>All four of these, and many more can be found in the <a href="https://githib.com/raganwald/method-combinators">method combinators</a> module. They can be used with all CoffeeScript and JavaScript projects.</p>
+
+<div class="page-break"></div>
+<h3 id="callbacks-and-promises">Callbacks and Promises</h3>
+
+<p>Like nearly all languages in widespread use, CoffeeScript expresses programs as expressions that are composed together with a combination of operators, function application, and control flow constructs such as sequences of statements.</p>
+
+<p>That&#x2019;s all baked into the underlying language, so it&#x2019;s easy to use it without thinking about it. Much as a fish (perhaps) exists in the ocean without being aware that there is an ocean. In this chapter, we&#x2019;re going to examine how to compose functions together when we have non-traditional forms of control-flow such as asynchronous function invocation.</p>
+
+<h4 id="composition-1">composition</h4>
+
+<p>The very simplest example of composing functions is simply &#x201C;pipelining&#x201D; the values. CoffeeScript&#x2019;s optional parentheses make this quite readable. Given:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">getIdFromSession</code> <code class="p">=</code> <code class="p">(</code><code class="n">session</code><code class="p">)</code> <code class="o">-&gt;</code>
+  # &#xC3;&#xA2;&#xE2;&#x82;&#xAC;&#xC2;&#xA6;
+
+<code class="n">fetchCustomerById</code> <code class="p">=</code> <code class="p">(</code><code class="n">id</code><code class="p">)</code> <code class="o">-&gt;</code>
+  # <code class="p">...</code>
+  
+<code class="n">currentSession</code> <code class="p">=</code> # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>You can write either:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">customerList</code><code class="p">.</code><code class="n">add</code><code class="p">(</code>
+  <code class="n">getIdFromSession</code><code class="p">(</code>
+    <code class="n">fetchCustomerById</code><code class="p">(</code>
+      <code class="n">currentSession</code>
+     <code class="p">)</code>
+  <code class="p">)</code>
+<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Or:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">customerList</code><code class="p">.</code><code class="n">add</code> <code class="n">getIdFromSession</code> <code class="n">fetchCustomerById</code> <code class="n">currentSession</code>
+</pre></div>
+
+</div>
+
+<p>The &#x201C;flow&#x201D; of data is from right-to-left. Some people find it more readable to go from left-to-right. The <code>sequence</code> function accomplishes this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">sequence</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">fns</code> <code class="p">=</code> <code class="n">arguments</code><code class="p">,</code> <code class="n">value</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">(</code><code class="n">arg</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">value</code> <code class="p">=</code> <code class="n">fn</code><code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="k">for</code> <code class="n">fn</code> <code class="n">in</code> <code class="n">fns</code>
+   
+<code class="n">sequence</code><code class="p">(</code>
+  <code class="n">getIdFromSession</code><code class="p">,</code>
+  <code class="n">fetchCustomerById</code><code class="p">,</code>
+  <code class="n">customerList</code><code class="p">.</code><code class="n">add</code>
+<code class="p">)(</code><code class="n">currentSession</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<h4 id="asynchronous-code">asynchronous code</h4>
+
+<p>CoffeeScript executes within an environment where code can be invoked asynchronously. For example, a browser application can asynchronously invoke a request to a remote server and invoke handler code when the request is satisfied or deemed to have failed.</p>
+
+<p>A very simple example is that in a browser application, you can defer invocation of a function after all current processing has been completed:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">defer</code> <code class="p">(</code><code class="n">fn</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">window</code><code class="p">.</code><code class="n">setTimeout</code><code class="p">(</code><code class="n">fn</code><code class="p">,</code> 0<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>The result is that if you write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">defer</code> <code class="o">-&gt;</code> <code class="n">console</code><code class="p">.</code><code class="nb">log</code><code class="p">(</code><code class="s">'Hello'</code><code class="p">)</code>
+<code class="n">console</code><code class="p">.</code><code class="nb">log</code><code class="p">(</code><code class="s">'Asynchronicity'</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>The console will show:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">Asynchronicity</code>
+<code class="n">Hello</code>
+</pre></div>
+
+</div>
+
+<p>The computer has no idea whether the result should be &#x201C;Asynchronicity Hello&#x201D; or &#x201C;Hello Asynchronicity&#x201D; or sometimes one and sometimes the other. But if we intend that the result be &#x201C;Asynchronicity Hello,&#x201D; we say that the function <code>-&gt; console.log('Hello')</code> <em>depends upon</em> the code <code>console.log('Asynchronicity')</code>.</p>
+
+<p>This might be what you want. If it isn&#x2019;t, you need to have a way to force the order of evaluation when there is supposed to be a dependency between different evaluations. There are a number of different models and abstractions for controlling these dependencies.</p>
+
+<p>We will examine two of them (<a href="chap06.html#callbacks-3">callbacks</a> and <a href="chap06.html#promises-3">promises</a>) briefly. Not for the purpose of learning the subtleties of using either model, but rather to obtain an understanding of how functions can be used to implement an abstraction over an underlying model.</p>
+
+<h4 id="callbacks-3">callbacks</h4>
+
+<p>The underlying premise of the callback model is that every function that invoked code asynchronously is responsible for invoking code that depends on it. The simplest protocol for this is also the most popular: Functions that invoke asynchronous code take an extra parameter called a <em>callback</em>. That parameter is a function to be invoked when they have completed.</p>
+
+<p>So our <code>defer</code> function looks like this if we want to use callbacks:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">defer</code> <code class="p">(</code><code class="n">fn</code><code class="p">,</code> <code class="n">callback</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">window</code><code class="p">.</code><code class="n">setTimeout</code> <code class="p">(</code><code class="o">-&gt;</code> <code class="n">callback</code> <code class="n">fn</code><code class="p">),</code> 0
+</pre></div>
+
+</div>
+
+<p>Instead of handing <code>fn</code> directly to <code>window.setTimeout</code>, we&#x2019;re handing it a function that invokes <code>fn</code> and pipelines the result (if any) to <code>callback</code>. Now we can ensure that the output is in the correct order:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">defer</code> <code class="p">(</code><code class="o">-&gt;</code> <code class="n">console</code><code class="p">.</code><code class="nb">log</code> <code class="s">'hello'</code><code class="p">),</code> <code class="p">(</code><code class="o">-&gt;</code> <code class="n">console</code><code class="p">.</code><code class="nb">log</code> <code class="s">'Asynchronicity'</code><code class="p">)</code>
+
+#<code class="p">=</code><code class="o">&gt;</code> <code class="n">Hello</code>
+#   <code class="n">Asynchronicity</code>
+</pre></div>
+
+</div>
+
+<p>Likewise, let&#x2019;s say we have a <code>displayPhoto</code> function that is synchronous, and not callback-aware:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">displayPhoto</code> <code class="p">=</code> <code class="p">(</code><code class="n">photoData</code><code class="p">)</code> <code class="o">-&gt;</code>
+  # <code class="p">...</code> <code class="n">synchronous</code> <code class="k">function</code> <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>It can also be converted to take a callback:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">displayPhotoWithCallback</code> <code class="p">=</code> <code class="p">(</code><code class="n">photoData</code><code class="p">,</code> <code class="n">callback</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">callback</code><code class="p">(</code><code class="n">displayPhoto</code><code class="p">(</code><code class="n">photoData</code><code class="p">))</code>
+</pre></div>
+
+</div>
+
+<p>There&#x2019;s a combinator we can extract:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">callbackize</code> <code class="p">=</code> <code class="p">(</code><code class="n">fn</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">arg</code><code class="p">,</code> <code class="n">callback</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">callback</code><code class="p">(</code><code class="n">fn</code><code class="p">(</code><code class="n">arg</code><code class="p">))</code>
+</pre></div>
+
+</div>
+
+<p>You recall that with ordinary functions, you could chain them with function application. With callbacks, you can also chain them manually. Here&#x2019;s an example inspired by <a href="http://elm-lang.org/learn/Escape-from-Callback-Hell.elm">a blog post</a>, fetching photos from a remote photo sharing site using their asynchronous API:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">tag</code> <code class="p">=</code> <code class="s">'ristretto'</code>
+
+<code class="n">fotositeGetPhotosByTag</code> <code class="n">tag</code><code class="p">,</code> <code class="p">(</code><code class="n">photoList</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">fotositeGetOneFromList</code> <code class="n">photos</code><code class="p">,</code> <code class="p">(</code><code class="n">photoId</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">fotositeGetPhoto</code> <code class="n">photoId</code><code class="p">,</code> <code class="n">displayPhoto</code>
+</pre></div>
+
+</div>
+
+<p>We can also create a callback-aware function that represents the composition of functions:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">displayPhotoForTag</code> <code class="p">=</code> <code class="p">(</code><code class="n">tag</code><code class="p">,</code> <code class="n">callback</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">fotositeGetPhotosByTag</code> <code class="n">tag</code><code class="p">,</code> <code class="p">(</code><code class="n">photoList</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">fotositeGetOneFromList</code> <code class="n">photos</code><code class="p">,</code> <code class="p">(</code><code class="n">photoId</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">fotositeGetPhoto</code> <code class="n">photoId</code><code class="p">,</code> <code class="n">displayPhoto</code>
+</pre></div>
+
+</div>
+
+<p>This code is <em>considerably</em> less messy in CoffeeScript than other languages that require a lot of additional syntax for functions. As a bonus, although it has some extra scaffolding and indentation, it&#x2019;s already in sequence order from top to bottom and doesn&#x2019;t require re-ordering like normal function application did. That being said, you can avoid the indentation and extra syntax by writing a <code>sequenceWithCallbacks</code> function:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">I</code> <code class="p">=</code> <code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code>
+
+<code class="n">sequenceWithCallbacks</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">fns</code> <code class="p">=</code> <code class="n">arguments</code><code class="p">,</code> <code class="n">lastIndex</code> <code class="p">=</code> <code class="n">arguments</code><code class="p">.</code><code class="nb">length</code> <code class="o">-</code> 1<code class="p">,</code> <code class="n">helper</code> <code class="p">=</code> <code class="n">undefined</code><code class="o">\</code>
+<code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">helper</code> <code class="p">=</code> <code class="p">(</code><code class="n">arg</code><code class="p">,</code> <code class="n">index</code><code class="p">,</code> <code class="n">callback</code> <code class="p">=</code> <code class="n">I</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="k">if</code> <code class="n">index</code> <code class="o">&gt;</code> <code class="n">lastIndex</code>
+        <code class="n">callback</code> <code class="n">arg</code>
+      <code class="k">else</code>
+        <code class="n">fns</code><code class="p">[</code><code class="n">index</code><code class="p">]</code> <code class="n">arg</code><code class="p">,</code> <code class="p">(</code><code class="n">result</code><code class="p">)</code> <code class="o">-&gt;</code>
+          <code class="n">helper</code> <code class="n">result</code><code class="p">,</code> <code class="n">index</code> <code class="o">+</code> 1<code class="p">,</code> <code class="n">callback</code>
+   <code class="p">(</code><code class="n">arg</code><code class="p">,</code> <code class="n">callback</code><code class="p">)</code> <code class="o">-&gt;</code>
+     <code class="n">helper</code> <code class="n">arg</code><code class="p">,</code> 0<code class="p">,</code> <code class="n">callback</code>
+     
+ <code class="n">displayPhotoForTag</code> <code class="p">=</code> <code class="n">sequenceWithCallbacks</code><code class="p">(</code>
+   <code class="n">fotositeGetPhotosByTag</code><code class="p">,</code>
+   <code class="n">fotositeGetOneFromList</code><code class="p">,</code>
+   <code class="n">fotositeGetPhoto</code><code class="p">,</code>
+   <code class="n">displayPhotoWithCallback</code>       
+ <code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p><code>sequenceWithCallbacks</code> is more complex than <code>sequence</code>, but it does help us make callback-aware code &#x201C;linear&#x201D; instead of nested/indented.</p>
+
+<p>As we have seen, we can compose linear execution of asynchronous functions, using either the explicit invocation of callbacks or using <code>sequenceWithCallbacks</code> to express the execution as a list.</p>
+
+<h4 id="promises-3">solving this problem with promises</h4>
+
+<p>Asynchronous control flow can also be expressed using objects and methods. One model is called <a href="http://wiki.commonjs.org/wiki/Promises/A">promises</a>. A <em>promise</em> is an object that acts as a state machine.[^finite-state machine] Its permissible states are:</p>
+
+<ul><li>unfulfilled</li>
+  <li>fulfilled</li>
+  <li>failed</li>
+</ul><p>The only permissible transitions are from <em>unfulfilled</em> to <em>fulfilled</em> and from <em>unfulfilled</em> to <em>failed</em>. Once in either the fulfilled or failed states, it remains there permanently.</p>
+
+<p>Each promise must at a bare minimum implement a single method, <code>.then(fulfilledCallback, failedCallback)</code>.<sup id="fnref-interactive"><a href="chap07.html#fn-interactive" rel="footnote">26</a></sup><code>fulfilledCallback</code> is a function to be invoked by a fulfilled promise, <code>failedCallback</code> by a failed promise. If the promise is already in either state, that function is invoked immediately.</p>
+
+<p><code>.then</code> returns another promise that is fulfilled when the appropriate callback is fulfilled or fails when the appropriate callback fails. This allows chaining of <code>.then</code> calls.</p>
+
+<p>If the promise is unfulfilled, the function(s) provided by the <code>.then</code> call are queued up to be invoked if and when the promise transitions to the appropriate state. In addition to this being an object-based protocol, the promise model also differs from the callback model in that <code>.then</code> can be invoked on a promise at any time, whereas callbacks must be specified in advance.</p>
+
+<p>Here&#x2019;s how our fotosite API would be used if it implemented promises instead of callbacks (we&#x2019;ll ignore handling failures):</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">fotositeGetPhotosByTag</code><code class="p">(</code><code class="n">tag</code><code class="p">)</code>
+  <code class="p">.</code><code class="n">then</code> <code class="n">fotositeGetOneFromList</code>
+  <code class="p">.</code><code class="n">then</code> <code class="n">fotositeGetPhoto</code>
+  <code class="p">.</code><code class="n">then</code> <code class="n">displayPhoto</code>
+</pre></div>
+
+</div>
+
+<p>Crisp and clean, no caffeine. The promises model provides linear code &#x201C;out of the box,&#x201D; and it &#x201C;scales up&#x201D; to serve as a complete platform for managing asynchronous code and remote invocation. Be sure to look at libraries supporting promises like <a href="https://github.com/kriskowal/q">q</a>, and <a href="https://github.com/cujojs/when">when</a>.</p>
+
+<div class="page-break"></div>
+<h3 id="summary-an-extra-shot-of-ideas">Summary: An Extra Shot of Ideas</h3>
+
+<div class="image-with-caption">
+  <p><img src="images/ripening.jpg" alt="Look at these wonderful coffee beans ripening while we finish this summary" /></p><p>Look at these wonderful coffee beans ripening while we finish this summary</p>
+</div>
+
+<h4 id="the-last-word">the last word&#x2026;</h4>
+
+<div class="image-with-caption">
+  <p><img src="images/brown-cups-1900.jpg" alt="Espresso a lungo, or the long pull, is thinner in texture, more acidic, and contains more caffeine than a ristretto pull" /></p><p>Espresso a lungo, or the long pull, is thinner in texture, more acidic, and contains more caffeine than a ristretto pull</p>
+</div>
+
+<!-- begin backmatter -->
+</div>
+<div id="leanpub-toc">
+<h2>Table of Contents</h2>
+<ol class="toc">
+<li class="chapter"><a href="chap00.html#a-pull-of-the-lever-prefaces">A Pull of the Lever: Prefaces</a></li>
+<li class="section"><a href="chap00.html#about-this-book">About This Book</a></li>
+<li class="section"><a href="chap00.html#legend">Legend</a></li>
+<li class="chapter"><a href="chap01.html#prelude-values-and-expressions">Prelude: Values and Expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-expressions">values and expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-identity">values and identity</a></li>
+<li class="chapter"><a href="chap02.html#functions">The first sip: Functions</a></li>
+<li class="section"><a href="chap02.html#as-little-as-possible-about-functions-but-no-less">As Little As Possible About Functions, But No Less</a></li>
+<li class="section"><a href="chap02.html#fargs">Ah. I&#x2019;d Like to Have an Argument, Please.<sup id="fnref-mp">
+  <a href="chap07.html#fn-mp" rel="footnote">6</a>
+</sup></a></li>
+<li class="section"><a href="chap02.html#closures">Closures and Scope</a></li>
+<li class="section"><a href="chap02.html#a-simple-question">A Simple Question</a></li>
+<li class="section"><a href="chap02.html#summary-functions">Summary: Functions</a></li>
+<li class="chapter"><a href="chap03.html#more-functions">Slurp: More About Functions and Scope</a></li>
+<li class="section"><a href="chap03.html#let-me-show-you-what-to-do">Let Me Show You What To Do</a></li>
+<li class="section"><a href="chap03.html#making-things-easy">Making Things Easy</a></li>
+<li class="section"><a href="chap03.html#poco">References, Identity, Arrays, and Objects</a></li>
+<li class="section"><a href="chap03.html#summary-more-about-functions-and-scope">Summary: More About Functions And Scope</a></li>
+<li class="chapter"><a href="chap04.html#mutable">Stir the Espresso: Objects, Mutation, and State</a></li>
+<li class="section"><a href="chap04.html#reassignment-and-mutation">Reassignment and Mutation</a></li>
+<li class="section"><a href="chap04.html#normal-case-variables">Normal Case Variables</a></li>
+<li class="section"><a href="chap04.html#comprehensions">Comprehensions</a></li>
+<li class="section"><a href="chap04.html#encapsulation">Encapsulating State with Closures</a></li>
+<li class="section"><a href="chap04.html#composition">Composition and Extension</a></li>
+<li class="section"><a href="chap04.html#this">This and That</a></li>
+<li class="section"><a href="chap04.html#summary-objects-mutation-and-state">Summary: Objects, Mutation, and State</a></li>
+<li class="chapter"><a href="chap05.html#methods">Finish the Cup: Instances and Classes</a></li>
+<li class="section"><a href="chap05.html#prototypes-are-simple-its-the-explanations-that-are-hard-to-understand">Prototypes are Simple, it&#x2019;s the Explanations that are Hard To Understand</a></li>
+<li class="section"><a href="chap05.html#a-touch-of-class">A Touch of Class</a></li>
+<li class="section"><a href="chap05.html#object-methods">Object Methods</a></li>
+<li class="section"><a href="chap05.html#canonicalization">Canonicalization</a></li>
+<li class="section"><a href="chap05.html#this-section-needs-no-title">This Section Needs No Title</a></li>
+<li class="section"><a href="chap05.html#classextension">Extending Classes</a></li>
+<li class="section"><a href="chap05.html#summary-instances-and-classes">Summary: Instances and Classes</a></li>
+<li class="chapter"><a href="chap06.html#extra-shot">An Extra Shot of Ideas</a></li>
+<li class="section"><a href="chap06.html#combinators">Refactoring to Combinators</a></li>
+<li class="section"><a href="chap06.html#method-decorators">Method Decorators</a></li>
+<li class="section"><a href="chap06.html#callbacks-and-promises">Callbacks and Promises</a></li>
+<li class="section"><a href="chap06.html#summary-an-extra-shot-of-ideas">Summary: An Extra Shot of Ideas</a></li>
+<li class="chapter"><a href="chap07.html#a-golden-crema">A Golden Crema</a></li>
+<li class="section"><a href="chap07.html#online">How to run the examples</a></li>
+<li class="section"><a href="chap07.html#thanks">Thanks!</a></li>
+<li class="section"><a href="chap07.html#copyright-notice">Copyright Notice</a></li>
+<li class="section"><a href="chap07.html#about-the-author">About The Author</a></li>
+</ol>
+</div>
+</body>
+</html>

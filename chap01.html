@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Prelude: Values and Expressions</title>
+<link href="stylesheet.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+<div id="leanpub-main">
+<h2 id="prelude-values-and-expressions">Prelude: Values and Expressions</h2>
+
+<p>
+  <em>The following material is extremely basic, however like most stories, the best way to begin is to start at the very beginning.</em>
+</p>
+
+<p>Imagine we are visiting our favourite coffee shop. They will make for you just about any drink you desire, from a sort, intense espresso ristretto through a dry cappuccino, up to those coffee-flavoured desert concoctions featuring various concentrated syrups and milks. (You tolerate the existence of sugary drinks because they provide a sufficient profit margin to the establishment to finance your hanging out there all day using their WiFi and ordering a $3 drink every few hours.)</p>
+
+<p>You express your order at one end of their counter, the folks behind the counter perform their magic, and deliver the coffee you value at the other end. This is exactly how the CoffeeScript environment works for the purpose of this book. We are going to dispense with web servers, browsers and other complexities and deal with this simple model: You give the computer an <a href="https://en.wikipedia.org/wiki/Expression_" title="computer_science">expression</a>, and it returns a <a href="https://en.wikipedia.org/wiki/Value_" title="computer_science">value</a>, just as you express your wishes to a barista and receive a coffee in return.</p>
+
+<h3 id="values-and-expressions">values and expressions</h3>
+
+<p>All values are expressions. Say you hand the barista a Cafe Cubana. Yup, you hand over a cup with some coffee infused through partially caramelized sugar. You say, &#x201C;I want one of these.&#x201D; The barista is no fool, she gives it straight bak to you, and you get exactly what you want. Thus, a Cafe Cubana is an expression (you can use it to place an order) and a value (you get it back from the barista).</p>
+
+<p>Let&#x2019;s try this with something the computer understands easily:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>42
+</pre></div>
+
+</div>
+
+<p>Is this an expression? A value? Neither? Or both?</p>
+
+<p>The answer is, this is both an expression <em>and</em> a value.<sup id="fnref-representation"><a href="chap07.html#fn-representation" rel="footnote">1</a></sup> The way you can tell that it&#x2019;s both is very easy: When you type it into CoffeeScript, you get the same thing back, just like our Cafe Cubana:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>42
+  #<code class="p">=</code><code class="o">&gt;</code> 42
+</pre></div>
+
+</div>
+
+<p>All values are expressions. That&#x2019;s easy! Are there any other kinds of expressions? Sure! let&#x2019;s go back to the coffee shop. Instead of handing over the finished coffee, we can hand over the ingredients. Let&#x2019;s hand over some ground coffee plus some boiling water.</p>
+
+<div class="aside sidebarish">
+  <hr /><p>Astute readers will realize we&#x2019;re omitting something. Congratulations! Take a sip of espresso. We&#x2019;ll get to that in a moment.</p>
+
+  <hr /></div>
+
+<p>Now the barista gives us back an espresso. And if we hand over the espresso, we get the espresso right back. So, boiling water plus ground coffee is an expression, but it isn&#x2019;t a value.<sup id="fnref-homoiconicity"><a href="chap07.html#fn-homoiconicity" rel="footnote">2</a></sup> Boiling water is a value. Ground coffee is a value. Espresso is a value. Boiling water plus ground coffee is an expression.</p>
+
+<p>Let&#x2019;s try this as well with something else the computer understands easily:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>"<code class="n">CoffeeScript</code>" <code class="o">+</code> " " <code class="o">+</code> "<code class="n">Ristretto</code>"
+  #<code class="p">=</code><code class="o">&gt;</code> "<code class="n">CoffeeScript</code> <code class="n">Ristretto</code>"
+</pre></div>
+
+</div>
+
+<p>Now we see that &#x201C;strings&#x201D; are values, and you can make an expression out of strings and an operator <code>+</code>. Since strings are values, they are also expressions by themselves. But strings with operators are not values, they are expressions. Now we know what was missing with our &#x201C;coffee grounds plus hot water&#x201D; example. The coffee grounds were a value, the boiling hot water was a value, and the &#x201C;plus&#x201D; operator between them made the whole thing an expression that was not a value.</p>
+
+<h3 id="values-and-identity">values and identity</h3>
+
+<p>In CoffeeScript, we test whether two values are identical with the <code>is</code> operator, and whether they are not identical with the <code>isnt</code> operator:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>	2 <code class="n">is</code> 2
+		#<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+		
+	<code class="s">'hello'</code> <code class="n">isnt</code> <code class="s">'goodbye'</code>
+		#<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>How does <code>is</code> work, exactly? Imagine that you&#x2019;re shown a cup of coffee. And then you&#x2019;re shown another cup of coffee. Are the two cups &#x201C;identical?&#x201D; In CoffeeScript, there are four possibilities:</p>
+
+<p>First, sometimes, the cups are of different types. One is a demitasse, the other a mug. This corresponds to comparing two things in CoffeeScript that have different <em>types</em>. For example, the string <code>"2"</code> is not the same thing as the number <code>2</code>. Strings and numbers are different types, so strings and numbers are never identical:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>2 <code class="n">is</code> <code class="s">'2'</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+  
+<code class="n">true</code> <code class="n">isnt</code> <code class="s">'true'</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Second, sometimes, the cups are of the same type&#x2013;perhaps two espresso cups&#x2013;but they have different contents. One holds a single, one a double. This corresponds to comparing two CoffeeScript values that have the same type but different &#x201C;content.&#x201D; For example, the number <code>5</code> is not the same thing as the number <code>2</code>.</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">true</code> <code class="n">is</code> <code class="n">false</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+  
+2 <code class="n">isnt</code> 5
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+  
+<code class="s">'two'</code> <code class="n">is</code> <code class="s">'five'</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>What if the cups are of the same type <em>and</em> the contents are the same? Well, CoffeeScript&#x2019;s third and fourth possibilities cover that.</p>
+
+<h4 id="value-types">value types</h4>
+
+<p>Third, some types of cups have no distinguishing marks on them. If they are the same kind of cup, and they hold the same contents, we have no way to tell the difference between them. This is the case with the strings, numbers, and booleans we have seen so far.</p>
+
+<div class="code-block">
+<div class="highlight"><pre>2 <code class="o">+</code> 2 <code class="n">is</code> 4
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+  
+<code class="p">(</code>2 <code class="o">+</code> 2 <code class="n">is</code> 4<code class="p">)</code> <code class="n">is</code> <code class="p">(</code>2 <code class="n">isnt</code> 5<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Note well what is happening with these examples: Even when we obtain a string, number, or boolean as the result of evaluating an expression, it is identical to another value of the same type with the same &#x201C;content.&#x201D; Strings, numbers, and booleans are examples of what CoffeeScript calls &#x201C;value&#x201D; or &#x201C;primitive&#x201D; types. We&#x2019;ll use both terms interchangeably.</p>
+
+<p>We haven&#x2019;t encountered the fourth possibility yet. Stretching the metaphor somewhat, some types of cups have a serial number on the bottom. So even if you have two cups of the same type, and their contents are the same, you can still distinguish between them.</p>
+
+<div class="image-with-caption">
+  <p><img src="images/macchiato_1200.jpg" alt="Cafe Macchiato is also a fine drink, especially when following up on the fortunes of the Azzuri or the standings in the Giro D'Italia" /></p><p>Cafe Macchiato is also a fine drink, especially when following up on the fortunes of the Azzuri or the standings in the Giro D'Italia</p>
+</div>
+
+<h4 id="reference-types">reference types</h4>
+
+<p>So what kinds of values might be the same type and have the same contents, but not be considered identical to CoffeeScript? Let&#x2019;s meet a data structure that is very common in contemporary programming languages, the <em>Array</em> (other languages sometimes call it a List or a Vector).</p>
+
+<p>Here are some expressions for arrays you can try typing for yourself:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">[1, 2, 3]</code>
+<code class="k">[1,2,2]</code>
+<code class="k">[1..3]</code>
+</pre></div>
+
+</div>
+
+<p>These are expressions, and you can combine <code>[]</code> with other expressions. Go wild with things like:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">[2-1, 2, 2+1]</code>
+<code class="k">[1, 1+1, 1+1+1]</code>
+</pre></div>
+
+</div>
+
+<p>We aren&#x2019;t going to spend a lot of time talking about it, but if you enable multiline mode (with ctrl-v), you can also type things like:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">[</code>
+  1
+  2
+  3
+  <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>Notice that you are always generating arrays with the same contents. But are they identical the same way that every value of <code>42</code> is identical to every other value of <code>42</code>? Try these for yourself:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">[1..3] is [1,2,3]</code>
+<code class="k">[1,2,3] is [1, 2, 3]</code>
+<code class="k">[1, 2, 3] is [1, 2, 3]</code>
+</pre></div>
+
+</div>
+
+<p>How about that! When you type <code>[1, 2, 3]</code> or any of its variations, you are typing an expression that generates its own <em>unique</em> array that is not identical to any other array, even if that other array also looks like <code>[1, 2, 3]</code>. It&#x2019;s as if CoffeeScript is generating new cups of coffee with serial numbers on the bottom.</p>
+
+<p>They look the same, but if you examine them with <code>is</code>, you see that they are different. Every time you evaluate an expression (including typing something in) to create an array, you&#x2019;re creating a new, distinct value even if it <em>appears</em> to be the same as some other array value. As we&#x2019;ll see, this is true of many other kinds of values, including <em>functions</em>, the main subject of this book.</p>
+
+<div class="page-break"></div>
+<h4 id="interlude">interlude&#x2026;</h4>
+
+<div class="image-with-caption">
+  <p><img src="images/espresso.jpg" alt="A short, intense shot of espresso" /></p><p>A short, intense shot of espresso</p>
+</div>
+
+<p><a href="https://en.wikipedia.org/wiki/Ristretto">Wikipedia</a> on Ristretto:</p>
+
+<blockquote>
+  <p>&#x201D;<strong>Ristretto</strong> is a very &#x2018;short&#x2019; shot of espresso coffee. Originally this meant pulling a hand press faster than usual using the same amount of water as a regular shot of espresso. Since the water came in contact with the grinds for a much shorter time the caffeine is extracted in reduced ratio to the flavorful coffee oils. The resultant shot could be described as bolder, fuller, with more body and less bitterness.&#x201D;</p>
+</blockquote>
+
+<div class="page-break"></div>
+<!-- begin mainmatter -->
+</div>
+<div id="leanpub-toc">
+<h2>Table of Contents</h2>
+<ol class="toc">
+<li class="chapter"><a href="chap00.html#a-pull-of-the-lever-prefaces">A Pull of the Lever: Prefaces</a></li>
+<li class="section"><a href="chap00.html#about-this-book">About This Book</a></li>
+<li class="section"><a href="chap00.html#legend">Legend</a></li>
+<li class="chapter"><a href="chap01.html#prelude-values-and-expressions">Prelude: Values and Expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-expressions">values and expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-identity">values and identity</a></li>
+<li class="chapter"><a href="chap02.html#functions">The first sip: Functions</a></li>
+<li class="section"><a href="chap02.html#as-little-as-possible-about-functions-but-no-less">As Little As Possible About Functions, But No Less</a></li>
+<li class="section"><a href="chap02.html#fargs">Ah. I&#x2019;d Like to Have an Argument, Please.<sup id="fnref-mp">
+  <a href="chap07.html#fn-mp" rel="footnote">6</a>
+</sup></a></li>
+<li class="section"><a href="chap02.html#closures">Closures and Scope</a></li>
+<li class="section"><a href="chap02.html#a-simple-question">A Simple Question</a></li>
+<li class="section"><a href="chap02.html#summary-functions">Summary: Functions</a></li>
+<li class="chapter"><a href="chap03.html#more-functions">Slurp: More About Functions and Scope</a></li>
+<li class="section"><a href="chap03.html#let-me-show-you-what-to-do">Let Me Show You What To Do</a></li>
+<li class="section"><a href="chap03.html#making-things-easy">Making Things Easy</a></li>
+<li class="section"><a href="chap03.html#poco">References, Identity, Arrays, and Objects</a></li>
+<li class="section"><a href="chap03.html#summary-more-about-functions-and-scope">Summary: More About Functions And Scope</a></li>
+<li class="chapter"><a href="chap04.html#mutable">Stir the Espresso: Objects, Mutation, and State</a></li>
+<li class="section"><a href="chap04.html#reassignment-and-mutation">Reassignment and Mutation</a></li>
+<li class="section"><a href="chap04.html#normal-case-variables">Normal Case Variables</a></li>
+<li class="section"><a href="chap04.html#comprehensions">Comprehensions</a></li>
+<li class="section"><a href="chap04.html#encapsulation">Encapsulating State with Closures</a></li>
+<li class="section"><a href="chap04.html#composition">Composition and Extension</a></li>
+<li class="section"><a href="chap04.html#this">This and That</a></li>
+<li class="section"><a href="chap04.html#summary-objects-mutation-and-state">Summary: Objects, Mutation, and State</a></li>
+<li class="chapter"><a href="chap05.html#methods">Finish the Cup: Instances and Classes</a></li>
+<li class="section"><a href="chap05.html#prototypes-are-simple-its-the-explanations-that-are-hard-to-understand">Prototypes are Simple, it&#x2019;s the Explanations that are Hard To Understand</a></li>
+<li class="section"><a href="chap05.html#a-touch-of-class">A Touch of Class</a></li>
+<li class="section"><a href="chap05.html#object-methods">Object Methods</a></li>
+<li class="section"><a href="chap05.html#canonicalization">Canonicalization</a></li>
+<li class="section"><a href="chap05.html#this-section-needs-no-title">This Section Needs No Title</a></li>
+<li class="section"><a href="chap05.html#classextension">Extending Classes</a></li>
+<li class="section"><a href="chap05.html#summary-instances-and-classes">Summary: Instances and Classes</a></li>
+<li class="chapter"><a href="chap06.html#extra-shot">An Extra Shot of Ideas</a></li>
+<li class="section"><a href="chap06.html#combinators">Refactoring to Combinators</a></li>
+<li class="section"><a href="chap06.html#method-decorators">Method Decorators</a></li>
+<li class="section"><a href="chap06.html#callbacks-and-promises">Callbacks and Promises</a></li>
+<li class="section"><a href="chap06.html#summary-an-extra-shot-of-ideas">Summary: An Extra Shot of Ideas</a></li>
+<li class="chapter"><a href="chap07.html#a-golden-crema">A Golden Crema</a></li>
+<li class="section"><a href="chap07.html#online">How to run the examples</a></li>
+<li class="section"><a href="chap07.html#thanks">Thanks!</a></li>
+<li class="section"><a href="chap07.html#copyright-notice">Copyright Notice</a></li>
+<li class="section"><a href="chap07.html#about-the-author">About The Author</a></li>
+</ol>
+</div>
+</body>
+</html>

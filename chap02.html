@@ -1,0 +1,820 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>The first sip: Functions</title>
+<link href="stylesheet.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+<div id="leanpub-main">
+<h2 id="functions">The first sip: Functions</h2>
+
+<div class="image-with-caption">
+  <p><img src="images/half-drunk.jpg" alt="While Terroir tends toward pretty low body (particularly at its age when we pulled it), the crema's so thin on this shot due to it having been sipped from already!" /></p><p>While Terroir tends toward pretty low body (particularly at its age when we pulled it), the crema's so thin on this shot due to it having been sipped from already!</p>
+</div>
+
+<div class="page-break"></div>
+<h3 id="as-little-as-possible-about-functions-but-no-less">As Little As Possible About Functions, But No Less</h3>
+
+<p>In CoffeeScript, functions are values, but they are also much more than simple numbers, strings, or even complex data structures like trees or maps. Functions represent computations to be performed. Like numbers, strings, and arrays, they have a representation in CoffeeScript. Let&#x2019;s start with the very simplest possible function. In CoffeeScript, it looks like this:<sup id="fnref-also"><a href="chap07.html#fn-also" rel="footnote">3</a></sup></p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">()</code> <code class="o">-&gt;</code>
+</pre></div>
+
+</div>
+
+<p>This is a function that is applied to no values and produces no value. Hah! There&#x2019;s the third thing. How do we represent &#x201C;no value&#x201D; in CoffeeScript? We&#x2019;ll find out in a minute. First, let&#x2019;s verify that our function is a value:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">()</code> <code class="o">-&gt;</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code><code class="n">Function</code><code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>What!? Why didn&#x2019;t it type back <code>() -&gt;</code> for us? This <em>seems</em> to break our rule that if an expression is also a value, CoffeeScript will give the same value back to us. What&#x2019;s going on? The simplest and easiest answer is that although the CoffeeScript interpreter does indeed return that value, displaying it on the screen is a slightly different matter. <code>[Function]</code> is a choice made by the people who wrote Node.js, the JavaScript environment that hosts the CoffeeScript REPL. If you try the same thing in a browser (using &#x201C;Try CoffeeScript&#x201D; at <a href="http://coffeescript.org">coffeescript.org</a> for example), you&#x2019;ll get something else entirely that isn&#x2019;t CoffeeScript at all, it&#x2019;s JavaScript.</p>
+
+<div class="page-break"></div>
+<div class="aside sidebarish">
+  <hr /><p>I&#x2019;d prefer something else, but I console myself with the thought that what gets typed back to us on the screen is arbitrary, and all that really counts is that it is somewhat useful for a human to read. But we must understand that whether we see <code>[Function]</code> or <code>function () {}</code> or&#x2013;in some future version of CoffeeScript&#x2013;<code>() -&gt;</code>, internally CoffeeScript has a full and proper function.<sup id="fnref-circular"><a href="chap07.html#fn-circular" rel="footnote">4</a></sup></p>
+
+  <hr /></div>
+
+<h4 id="functions-and-identities">functions and identities</h4>
+
+<p>You recall that we have two types of values with respect to identity: Value types and reference types. Value types share the same identity if they have the same contents.Reference types do not.</p>
+
+<p>Which kind are functions? Let&#x2019;s try it. For reasons of appeasing the CoffeeScript parser, we&#x2019;ll enclose our functions in parentheses:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(()</code> <code class="o">-&gt;</code><code class="p">)</code> <code class="n">is</code> <code class="p">(()</code> <code class="o">-&gt;</code><code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>Like arrays, every time you evaluate an expression to produce a function, you get a new function that is not identical to any other function, even if you use the same expression to generate it. &#x201C;Function&#x201D; is a reference type.</p>
+
+<h4 id="applying-functions">applying functions</h4>
+
+<p>Let&#x2019;s put functions to work. The way we use functions is to <em>apply</em> them to zero or more values called <em>arguments</em>. Just as <code>2 + 2</code> produces a value (in this case <code>4</code>), applying a function to zero or more arguments produces a value as well.</p>
+
+<p>Here&#x2019;s how we apply a function to some values in CoffeeScript: Let&#x2019;s say that <em>fn_expr</em> is an expression that when evaluated, produces a function. Let&#x2019;s call the arguments <em>args</em>. Here&#x2019;s how to apply a function to some arguments:</p>
+
+<p>
+  <em>fn_expr</em>
+  <code>(</code>
+  <em>args</em>
+  <code>)</code>
+</p>
+
+<p>Right now, we only know about one such expression: <code>() -&gt;</code>, so let&#x2019;s use it. We&#x2019;ll put it in parentheses<sup id="fnref-ambiguous"><a href="chap07.html#fn-ambiguous" rel="footnote">5</a></sup> to keep the parser happy, like we did above: <code>(() -&gt;)</code>. Since we aren&#x2019;t giving it any arguments, we&#x2019;ll simply write <code>()</code> after the expression. So we write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(()</code> <code class="o">-&gt;</code><code class="p">)()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">undefined</code>
+</pre></div>
+
+</div>
+
+<p>What is this <code>undefined</code>?</p>
+
+<h4 id="undefined">
+  <code>undefined</code>
+</h4>
+
+<p>In CoffeeScript, the absence of a value is written <code>undefined</code>, and it means there is no value. It will crop up again. <code>undefined</code> is its own type of value, and it acts like a value type:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">undefined</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">undefined</code>
+</pre></div>
+
+</div>
+
+<p>Like numbers, booleans and strings, CoffeeScript can print out the value <code>undefined</code>.</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">undefined</code> <code class="n">is</code> <code class="n">undefined</code>
+  # <code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+<code class="p">(()</code> <code class="o">-&gt;</code><code class="p">)()</code> <code class="n">is</code> <code class="p">(()</code> <code class="o">-&gt;</code><code class="p">)()</code>
+  # <code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+<code class="p">(()</code> <code class="o">-&gt;</code><code class="p">)()</code> <code class="n">is</code> <code class="n">undefined</code>
+  # <code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>No matter how you evaluate <code>undefined</code>, you get an identical value back. <code>undefined</code> is a value that means &#x201C;I don&#x2019;t have a value.&#x201D; But it&#x2019;s still a value :-)</p>
+
+<p>Speaking of <code>is undefined</code>, a common pattern in CoffeeScript programming is to test wither something <code>isnt undefined</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">undefined</code> <code class="n">isnt</code> <code class="n">undefined</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+<code class="s">'undefined'</code> <code class="n">isnt</code> <code class="n">undefined</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+<code class="n">false</code> <code class="n">isnt</code> <code class="n">undefined</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>This is so common that a shortcut is provided, the suffix operator <code>?</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">undefined</code>?
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+<code class="s">'undefined'</code>?
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+<code class="n">false</code>?
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<div class="aside sidebarish">
+  <hr /><p>You might think that <code>undefined</code> in CoffeeScript is equivalent to <code>NULL</code> in SQL. No. In SQL, two things that are <code>NULL</code> are not equal to nor share the same identity, because two unknowns can&#x2019;t be equal. In CoffeeScript, every <code>undefined</code> is identical to every other <code>undefined</code>.</p>
+
+  <hr /></div>
+
+<h4 id="functions-with-no-arguments">functions with no arguments</h4>
+
+<p>Back to our function. We evaluated this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(()</code> <code class="o">-&gt;</code><code class="p">)()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">undefined</code>
+</pre></div>
+
+</div>
+
+<p>Let&#x2019;s recall that we were applying the function <code>() -&gt;</code> to no arguments (because there was nothing inside of <code>()</code>). So how do we know to expect <code>undefined</code>? That&#x2019;s easy. When we define a function, we write the arguments it expects to the left of the <code>() -&gt;</code> and an optional expression to the right. This expression is called the function&#x2019;s <em>body</em>. Like this:</p>
+
+<p>
+  <code>(</code>
+  <em>args</em>
+  <code>) -&gt; </code>
+  <em>body</em>
+</p>
+
+<p>There is a funny rule: You can omit the body, and if you do, applying the function always evaluates to <code>undefined</code>.[^omit]</p>
+
+<p>[^omit] Elsewhere, we&#x2019;ve pledged to avoid optional bits that don&#x2019;t add a lot to our understanding. This optional bit gives us an excuse to learn about <code>undefined</code>, so that&#x2019;s why it&#x2019;s in. Now that we know this, we see that our expression <code>() -&gt;</code> evaluates to a function taking no arguments and having no expression, therefore when you apply it to no arguments with <code>(() -&gt;)()</code>, you get <code>undefined</code>.</p>
+
+<p>What about functions that have a body? Let&#x2019;s write a few. Here&#x2019;s the rule: We can use <em>anything</em> we&#x2019;ve already learned how to use as an expression. Cutting and pasting, that means that the following are all expressions that evaluate to functions:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">()</code> <code class="o">-&gt;</code> 2
+<code class="p">()</code> <code class="o">-&gt;</code> 2 <code class="o">+</code> 2
+<code class="p">()</code> <code class="o">-&gt;</code> "<code class="n">Hello</code>" <code class="o">+</code> " " <code class="o">+</code> "<code class="n">CoffeeScript</code>"
+<code class="p">()</code> <code class="o">-&gt;</code> <code class="n">true</code> <code class="n">is</code> <code class="n">not</code> <code class="n">false</code>
+<code class="p">()</code> <code class="o">-&gt;</code> <code class="n">false</code> <code class="n">isnt</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>And you can evaluate them by typing any of these into CoffeeScript:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(()</code> <code class="o">-&gt;</code> 2<code class="p">)()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 2
+<code class="p">(()</code> <code class="o">-&gt;</code> 2 <code class="o">+</code> 2<code class="p">)()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 4
+<code class="p">(()</code> <code class="o">-&gt;</code> "<code class="n">Hello</code>" <code class="o">+</code> " " <code class="o">+</code> "<code class="n">CoffeeScript</code>"<code class="p">)()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> "<code class="n">Hello</code> <code class="n">CoffeeScript</code>"
+<code class="p">(()</code> <code class="o">-&gt;</code> <code class="n">true</code> <code class="n">is</code> <code class="n">not</code> <code class="n">false</code><code class="p">)()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+<code class="p">(()</code> <code class="o">-&gt;</code> <code class="n">false</code> <code class="n">isnt</code> <code class="n">true</code><code class="p">)()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>We haven&#x2019;t discussed arguments yet, but let&#x2019;s get clever with what we already have.</p>
+
+<h4 id="functions-that-evaluate-to-functions">functions that evaluate to functions</h4>
+
+<p>If an expression that evaluates to a function is, well, an expression, and if a function expression can have any expression on its right side&#x2026; <em>Can we put an expression that evaluates to a function on the right side of a function expression?</em></p>
+
+<p>Yes:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code>
+</pre></div>
+
+</div>
+
+<p>That&#x2019;s a function! It&#x2019;s a function that when applied that evaluates to a function that when applied evaluates to <code>undefined</code>. Watch and see:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code><code class="n">Function</code><code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>It evaluates to a function&#x2026;</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code><code class="p">)()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code><code class="n">Function</code><code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>That when applied, evaluates to a function&#x2026;</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code><code class="p">)()()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">undefined</code>
+</pre></div>
+
+</div>
+
+<p>That when applied, evaluates to <code>undefined</code>. Likewise:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>That&#x2019;s a function! It&#x2019;s a function that when applied that evaluates to a function that when applied evaluates to <code>true</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code> <code class="n">true</code><code class="p">)()()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Well. We&#x2019;ve been very clever, but so far this all seems very abstract and computer science-y. Diffraction of a crystal is beautiful and interesting in its own right, but you can&#x2019;t blame us for wanting to be shown a practical use for it, like being able to determine the composition of a star millions of light years away. So&#x2026; In the next chapter, &#x201C;<a href="chap02.html#fargs">I&#x2019;d Like to Have an Argument, Please</a>,&#x201D; we&#x2019;ll see how to make functions practical.</p>
+
+<div class="page-break"></div>
+<h3 id="fargs">Ah. I&#x2019;d Like to Have an Argument, Please.<sup id="fnref-mp"><a href="chap07.html#fn-mp" rel="footnote">6</a></sup></h3>
+
+<p>Up to now, we&#x2019;ve looked at functions without arguments. We haven&#x2019;t even said what an argument <em>is</em>, only that our functions don&#x2019;t have any.</p>
+
+<div class="aside sidebarish">
+  <hr /><p>Most programmers are perfectly familiar with arguments (often called &#x201C;parameters&#x201D;). Secondary school mathematics discusses this. So you know what they are, and I know that you know what they are, but please be patient with the explanation!</p>
+
+  <hr /></div>
+
+<p>Let&#x2019;s make a function with an argument:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">room</code><code class="p">)</code> <code class="o">-&gt;</code>
+</pre></div>
+
+</div>
+
+<p>This function has one argument, <code>room</code>, and no body. Here&#x2019;s a function with two arguments and no body:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">room</code><code class="p">,</code> <code class="n">board</code><code class="p">)</code> <code class="o">-&gt;</code>
+</pre></div>
+
+</div>
+
+<p>I&#x2019;m sure you are perfectly comfortable with the idea that this function has two arguments, <code>room</code>, and <code>board</code>. What does one do with the arguments? Use them in the body, of course. What do you think this is?</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">diameter</code> <code class="o">*</code> 3<code class="p">.</code>14159265
+</pre></div>
+
+</div>
+
+<p>It&#x2019;s a function for calculating the circumference of a circle given the radius. I read that aloud as &#x201C;When applied to a value representing the diameter, this function <em>gives</em> (that&#x2019;s my word for the arrow) the diameter times 3.14159265.&#x201D;</p>
+
+<p>Remember that to apply a function with no arguments, we wrote <code>(() -&gt;)()</code>. To apply a function with an argument (or arguments), we put the argument (or arguments) within the parentheses, like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">diameter</code> <code class="o">*</code> 3<code class="p">.</code>14159265<code class="p">)(</code>2<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 6<code class="p">.</code>2831853
+</pre></div>
+
+</div>
+
+<p>You won&#x2019;t be surprised to see how to write and apply a function to two arguments:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">room</code><code class="p">,</code> <code class="n">board</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">room</code> <code class="o">+</code> <code class="n">board</code><code class="p">)(</code>800<code class="p">,</code> 150<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 950
+</pre></div>
+
+</div>
+
+<div class="tip sidebarish">
+  <hr /><h4 id="a-quick-summary-of-functions-and-bodies"><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" />a quick summary of functions and bodies</h4>
+
+  <p>How arguments are used in a body&#x2019;s expression is probably perfectly obvious to you from the examples, especially if you&#x2019;ve used any programming language (except, possibly for the dialect of BASIC I recall from my secondary school that didn&#x2019;t allow parameters when you called a procedure).</p>
+
+  <p>Expressions consist either of representations of values (like <code>3.14159265</code>, <code>true</code>, and <code>undefined</code>), operators that combine expressions (like <code>3 + 2</code>), and some special forms like <code>[1, 2, 3]</code> for creating arrays out of expressions and <code>(</code><em>arguments</em><code>) -&gt;</code><em>body-expression</em> for creating functions.</p>
+
+  <p>This loose definition is recursive, so we can intuit (or use our experience with other languages) that since a function has an expression on its right hand side, we can write a function that has a function as its expression, or an array that contains another array expression. Or a function that gives an array, an array of functions, a function that gives an array of functions, and so forth:</p>
+
+  <div class="code-block">
+<div class="highlight"><pre><code class="nf">() -&gt;</code> <code class="nf">() -&gt;</code>
+<code class="nf">() -&gt;</code> <code class="p">[</code> <code class="mi">1</code><code class="p">,</code> <code class="mi">2</code><code class="p">,</code> <code class="mi">3</code><code class="p">]</code>
+<code class="p">[</code><code class="mi">1</code><code class="p">,</code> <code class="p">[</code><code class="mi">2</code><code class="p">,</code> <code class="mi">3</code><code class="p">],</code> <code class="mi">4</code><code class="p">]</code>
+<code class="nf">() -&gt;</code> <code class="p">[(</code><code class="nf">() -&gt;</code> <code class="mi">1</code><code class="p">),</code> <code class="p">(</code><code class="nf">() -&gt;</code> <code class="mi">2</code><code class="p">),</code> <code class="p">(</code><code class="nf">() -&gt;</code> <code class="mi">3</code><code class="p">)]</code>
+</pre></div>
+  
+</div>
+
+  <hr /></div>
+
+<h4 id="call-by-value">call by value</h4>
+
+<p>Like most contemporary programming languages, CoffeeScript uses the &#x201C;call by value&#x201D; <a href="http://en.wikipedia.org/wiki/Evaluation_strategy">evaluation strategy</a>. That&#x2019;s a $2.75 way of saying that when you write some code that appears to apply a function to an expression or expressions, CoffeeScript evaluates all of those expressions and applies the functions to the resulting value(s).[^other-calls]</p>
+
+<p>So when you write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">diameter</code> <code class="o">*</code> 3<code class="p">.</code>14159265<code class="p">)(</code>1 <code class="o">+</code> 1<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 6<code class="p">.</code>2831853
+</pre></div>
+
+</div>
+
+<p>What happened internally is that the expression <code>1 + 1</code> was evaluated first, resulting in <code>2</code>. Then our circumference function was applied to <code>2</code>.<sup id="fnref-f2f"><a href="chap07.html#fn-f2f" rel="footnote">7</a></sup></p>
+
+<h4 id="variables-and-bindings">variables and bindings</h4>
+
+<p>Right now everything looks simple and straightforward, and we can move on to talk about arguments in more detail. And we&#x2019;re going to work our way up from <code>(diameter) -&gt; diameter * 3.14159265</code> to functions like:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code>
+</pre></div>
+
+</div>
+
+<div class="aside sidebarish">
+  <hr /><p><code>(x) -&gt; (y) -&gt; x</code> just looks crazy, as if we are learning English as a second language and the teacher promises us that soon we will be using words like <em>antidisestablishmentarianism</em>. Besides a desire to use long words to sound impressive, this is not going to seem attractive until we find ourselves wanting to discuss the role of the Church of England in 19th century British politics.</p>
+
+  <p>But there&#x2019;s another reason for learning the word <em>antidisestablishmentarianism</em>: We might learn how prefixes and postfixes work in English grammar. It&#x2019;s the same thing with <code>(x) -&gt; (y) -&gt; x</code>. It has a certain important meaning in its own right, and it&#x2019;s also an excellent excuse to learn about functions that make functions, environments, variables, and more.</p>
+
+  <hr /></div>
+
+<p>In order to talk about how this works, we should agree on a few terms (you may already know them, but let&#x2019;s check-in together and &#x201C;synchronize our dictionaries&#x201D;). The first <code>x</code>, the one in <code>(x) -&gt;</code>, is an <em>argument</em>. The <code>y</code> in <code>(y) -&gt;</code> is another argument. The second <code>x</code>, the one in <code>-&gt; x</code>, is not an argument, <em>it&#x2019;s an expression referring to a variable</em>. Arguments and variables work the same way whether we&#x2019;re talking about <code>(x) -&gt; (y) -&gt; x</code>  or just plain <code>(x) -&gt; x</code>.</p>
+
+<p>Every time a function is invoked (&#x201C;invoked&#x201D; is a synonym for &#x201C;applied to zero or more arguments&#x201D;), a new <em>environment</em> is created. An environment is a (possibly empty) dictionary that maps variables to values by name. The <code>x</code> in the expression that we call a &#x201C;variable&#x201D; is itself an expression that is evaluated by looking up the value in the environment.</p>
+
+<p>How does the value get put in the environment? Well for arguments, that is very simple. When you apply the function to the arguments, an entry is placed in the dictionary for each argument. So when we write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code><code class="p">)(</code>2<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 2
+</pre></div>
+
+</div>
+
+<p>What happens is this:</p>
+
+<ol><li>CoffeeScript parses this whole thing as an expression made up of several sub-expressions.</li>
+  <li>It then starts evaluating the expression, including evaluating sub-expressions</li>
+  <li>One sub-expression, <code>(x) -&gt; x</code> evaluates to a function.</li>
+  <li>Another, <code>2</code>, evaluates to the number 2.</li>
+  <li>CoffeeScript now evaluates applying the function to the argument <code>2</code>. Here&#x2019;s where it gets interesting&#x2026;</li>
+  <li>An environment is created.</li>
+  <li>The value &#x2018;2&#x2019; is bound to the name &#x2018;x&#x2019; in the environment.</li>
+  <li>The expression &#x2018;x&#x2019; (the right side of the function) is evaluated within the environment we just created.</li>
+  <li>The value of a variable when evaluated in an environment is the value bound to the variable&#x2019;s name in that environment, which is &#x2018;2&#x2019;</li>
+  <li>And that&#x2019;s our result.</li>
+</ol><p>When we talk about environments, we&#x2019;ll use an <a href="http://json.org/">unsurprising syntax</a> for showing their bindings: <code>{x: 2, ...}</code>. meaning, that the environment is a dictionary, and that the value <code>2</code> is bound to the name <code>x</code>, and that there might be other stuff in that dictionary we aren&#x2019;t discussing right now.</p>
+
+<h4 id="call-by-sharing">call by sharing</h4>
+
+<p>Earlier, we distinguished CoffeeScript&#x2019;s <em>value types</em> from its <em>reference types</em>. At that time, we looked at how CoffeeScript distinguishes objects that are identical from objects that are not. Now it is time to take another look at the distinction between value and reference types.</p>
+
+<p>There is a property that CoffeeScript strictly maintains: When a value&#x2013;any value&#x2013;is passed as an argument to a function, the value bound in the function&#x2019;s environment must be identical to the original.</p>
+
+<p>We said that CoffeeScript binds names to values, but we didn&#x2019;t say what it means to bind a name to a value. Now we can elaborate: When CoffeeScript binds a name to a value type value, it makes a copy of the value and places the copy in the environment. As you recall, value types like strings and numbers are identical to each other if they have the same content. So CoffeeScript can make as many copies of strings, numbers, or booleans as it wishes.</p>
+
+<p>What about reference types? CoffeeScript cannot place a copy of an array or object in an environment, because the copy would not be identical to the original. So instead, CoffeeScript does not place reference values in any environment. CoffeeScript places <em>references</em> to reference types in environments, and when the value needs to be used, CoffeeScript uses the reference to obtain the original.</p>
+
+<p>Because many references can share the same value, and because CoffeeScript passes references as arguments, CoffeeScript can be said to implement &#x201C;call by sharing&#x201D; semantics. Call by sharing is generally understood to be a specialization of call by value, and it explains why some values are known as value types and other values are known as reference types.</p>
+
+<p>And with that, we&#x2019;re ready to look at <em>closures</em>. When we combine our knowledge of value types, reference types, arguments, and closures, we&#x2019;ll understand why this function always evaluates to <code>true</code> no matter what argument you apply it to:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">((</code><code class="n">copy</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">copy</code> <code class="n">is</code> <code class="n">value</code>
+  <code class="p">)(</code><code class="n">value</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<div class="page-break"></div>
+<h3 id="closures">Closures and Scope</h3>
+
+<p>Before we explain <code>(x) -&gt; (y) -&gt; x</code>, we&#x2019;re going to toss in something that doesn&#x2019;t directly affect our explanation, but makes things easier to see <em>visually</em>. Up to now, every function has looked like this: <code>(</code><em>arguments</em><code>) -&gt; </code><em>body</em>. There&#x2019;s another way to write functions. For example here&#x2019;s the other way to write <code>(x) -&gt; x</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">x</code>
+</pre></div>
+
+</div>
+
+<p>You get the idea: You can indent the body instead of putting it on the same line. Let&#x2019;s introduce a new term: <code>(x) -&gt;</code> is the function&#x2019;s <em>signature</em>, and <code>x</code> is its <em>body</em>, just as we&#x2019;ve mentioned before.</p>
+
+<p>That means inductively we can also write <code>(x) -&gt; (y) -&gt; x</code> in two other ways:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code>
+</pre></div>
+
+</div>
+
+<p>Or:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">x</code>
+</pre></div>
+
+</div>
+
+<p>The indents help us see that the <code>x</code> is the body &#x201C;belonging to&#x201D; a function with signature <code>(y) -&gt;</code>, and that it belongs to a function with signature <code>(x) -&gt;</code>.</p>
+
+<p>Time to see how a function within a function works:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">x</code>
+<code class="p">)(</code>1<code class="p">)(</code>2<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 1
+</pre></div>
+
+</div>
+
+<p>First off, let&#x2019;s use what we learned above. Given <code>(</code><em>some function</em><code>)(</code><em>some argument</em><code>)</code>, we know that we apply the function to the argument, create an environment, bind the value of the argument to the name, and evaluate the function&#x2019;s expression. So we do that first with this code:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">x</code>
+<code class="p">)(</code>1<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code><code class="n">Function</code><code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>The environment belonging to the function with signature <code>(x) -&gt;</code> becomes <code>{x: 1, ...}</code>, and the result of applying the function is another function value. It makes sense that the result value is a function, because the expression for <code>(x) -&gt;</code>&#x2019;s body is:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>  <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">x</code>
+</pre></div>
+
+</div>
+
+<p>So now we have a value representing that function. Then we&#x2019;re going to take the value of that function and apply it to the argument <code>2</code>, something like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>  <code class="p">((</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">x</code><code class="p">)(</code>2<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>So we seem to get a new environment <code>{y: 2, ...}</code>. How is the expression <code>x</code> going to be evaluated in that function&#x2019;s environment? There is no <code>x</code>!</p>
+
+<div class="aside sidebarish">
+  <hr /><p>This, by the way, is one of the great defining characteristic of CoffeeScript and languages in the same family: Whether they allow things like functions to nest inside each other, and if so, how they handle variables from &#x201C;outside&#x201D; of a function that are referenced inside a function. For example, here&#x2019;s the equivalent code in Ruby:</p>
+
+  <div class="code-block">
+<div class="highlight"><pre><code class="nb">lambda</code> <code class="p">{</code> <code class="o">|</code><code class="n">x</code><code class="o">|</code>
+  <code class="nb">lambda</code> <code class="p">{</code> <code class="o">|</code><code class="n">y</code><code class="o">|</code> <code class="n">x</code> <code class="p">}</code>
+<code class="p">}</code><code class="o">[</code><code class="mi">1</code><code class="o">][</code><code class="mi">2</code><code class="o">]</code>
+  <code class="c1">#=&gt; 1</code>
+</pre></div>
+  
+</div>
+
+  <p>Now let&#x2019;s have an Espresso before we continue!</p>
+
+  <hr /></div>
+
+<h4 id="if-functions-without-free-variables-are-pure-are-closures-impure">If functions without free variables are pure, are closures impure?</h4>
+
+<p>The function <code>(y) -&gt; x</code> is interesting. It contains a <em>free variable</em>, <code>x</code>.<sup id="fnref-nonlocal"><a href="chap07.html#fn-nonlocal" rel="footnote">8</a></sup> A free variable is one that is not bound within the function. Up to now, we&#x2019;ve only seen one way to &#x201C;bind&#x201D; a variable, namely by passing in an argument with the same name. Since the function <code>(y) -&gt; x</code> doesn&#x2019;t have an argument named <code>x</code>, the variable <code>x</code> isn&#x2019;t bound in this function, which makes it &#x201C;free.&#x201D;</p>
+
+<p>Now that we know that variables used in a function are either bound or free, we can bifurcate functions into those with free variables and those without:</p>
+
+<ul><li>Functions containing no free variables are called <em>pure functions</em>.</li>
+  <li>Functions containing one or more free variables are called <em>closures</em>.</li>
+</ul><p>Pure functions are easiest to understand. They always mean the same thing wherever you use them. Here are some pure functions we&#x2019;ve already seen:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">()</code> <code class="o">-&gt;</code>
+
+<code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">x</code>
+  
+<code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">x</code>
+</pre></div>
+
+</div>
+
+<p>The first function doesn&#x2019;t have any variables, therefore doesn&#x2019;t have any free variables. The second doesn&#x2019;t have any free variables, because its only variable is bound. The third one is actually two functions, one in side the other. <code>(y) -&gt;</code> has a free variable, but the entire expression refers to <code>(x) -&gt;</code>, and it doesn&#x2019;t have a free variable: The only variable anywhere in its body is <code>x</code>, which is certainly bound within <code>(x) -&gt;</code>.</p>
+
+<p>From this, we learn something: A pure function can contain a closure.</p>
+
+<div class="exercise sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_exercise.png" alt="exercise" />If pure functions can contain closures, can a closure contain a pure function? Using only what we&#x2019;ve learned so far, attempt to compose a closure that contains a pure function. If you can&#x2019;t, give your reasoning for why it&#x2019;s impossible.</p>
+
+  <hr /></div>
+
+<p>Pure functions always mean the same thing because all of their &#x201C;inputs&#x201D; are fully defined by their arguments. Not so with a closure. If I present to you this free function <code>(x, y) -&gt; x + y</code>, we know exactly what it does with <code>(2, 2)</code>. But what about this closure: <code>(y) -&gt; x + y</code>? We can&#x2019;t say what it will do with argument <code>(2)</code> without understanding the magic for evaluating the free variable <code>x</code>.</p>
+
+<h4 id="its-always-the-environment">it&#x2019;s always the environment</h4>
+
+<p>To understand how closures are evaluated, we need to revisit environments. As we&#x2019;ve said before, all functions are associated with an environment. We also hand-waved something when describing our environment. Remember that we said the environment for <code>((x) -&gt; (y) -&gt; x)(1)</code> is <code>{x: 1, ...}</code> and that the environment for <code>((y) -&gt; x)(2)</code> is <code>{y: 2, ...}</code>? Let&#x2019;s fill in the blanks!</p>
+
+<p>The environment for <code>((y) -&gt; x)(2)</code> is <em>actually</em> <code>{y: 2, '..': {x: 1, ...}}</code>. <code>'..'</code> means something like &#x201C;parent&#x201D; or &#x201C;enclosure&#x201D; or &#x201C;super-environment.&#x201D; It&#x2019;s <code>(x) -&gt;</code>&#x2019;s environment, because the function <code>(y) -&gt; x</code> is within <code>(x) -&gt;</code>&#x2019;s body. So whenever a function is applied to arguments, its environment always has a reference to its parent environment.</p>
+
+<p>And now you can guess how we evaluate <code>((y) -&gt; x)(2)</code> in the environment <code>{y: 2, '..': {x: 1, ...}}</code>. The variable <code>x</code> isn&#x2019;t in <code>(y) -&gt;</code>&#x2019;s immediate environment, but it is in its parent&#x2019;s environment, so it evaluates to <code>1</code> and that&#x2019;s what <code>((y) -&gt; x)(2)</code> returns even though it ended up ignoring its own argument.</p>
+
+<div class="aside sidebarish">
+  <hr /><p><code>(x) -&gt; x</code> is called the I Combinator or Identity Function. <code>(x) -&gt; (y) -&gt; x</code> is called the K Combinator or Kestrel. Some people get so excited by this that they write entire books about them, some are <a href="http://www.amzn.com/0192801422?tag=raganwald001-20">great</a>, some&#x2013;how shall I put this&#x2013;are <a href="https://leanpub.com/combinators" title="Kestrels, Quirky Birds, and Hopeless Egocentricity">interesting</a> if you use Ruby.</p>
+
+  <hr /></div>
+
+<p>Functions can have grandparents too:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">(</code><code class="n">z</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">x</code> <code class="o">+</code> <code class="n">y</code> <code class="o">+</code> <code class="n">z</code>
+</pre></div>
+
+</div>
+
+<p>This function does much the same thing as:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">x</code><code class="p">,</code> <code class="n">y</code><code class="p">,</code> <code class="n">z</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">x</code> <code class="o">+</code> <code class="n">y</code> <code class="o">+</code> <code class="n">z</code>
+</pre></div>
+
+</div>
+
+<p>Only you call it with <code>(1)(2)(3)</code> instead of <code>(1, 2, 3)</code>. The other big difference is that you can call it with <code>(1)</code> and get a function back that you can later call with <code>(2)(3)</code>.</p>
+
+<div class="page-break"></div>
+<div class="aside sidebarish">
+  <hr /><p>The first function is the result of <a href="https://en.wikipedia.org/wiki/Currying">currying</a> the second function. Calling a curried function with only some of its arguments is sometimes called <a href="https://en.wikipedia.org/wiki/Partial_application">partial application</a>. Some programming languages automatically curry and partially evaluate functions without the need to manually nest them.</p>
+
+  <hr /></div>
+
+<h4 id="shadowy-variables-from-a-shadowy-planet">shadowy variables from a shadowy planet</h4>
+
+<p>An interesting thing happens when a variable has the same name as an ancestor environment&#x2019;s variable. Consider:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">x</code><code class="p">,</code> <code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">x</code> <code class="o">+</code> <code class="n">y</code>
+</pre></div>
+
+</div>
+
+<p>The function <code>(x, y) -&gt; x + y</code> is a pure function, because its <code>x</code> is defined within its own environment. Although its parent also defines an <code>x</code>, it is ignored when evaluating <code>x + y</code>. CoffeeScript always searches for a binding starting with the functions own environment and then each parent in turn until it finds one. The same is true of:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">x</code><code class="p">,</code> <code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">(</code><code class="n">w</code><code class="p">,</code> <code class="n">z</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="p">(</code><code class="n">w</code><code class="p">)</code> <code class="o">-&gt;</code>
+        <code class="n">x</code> <code class="o">+</code> <code class="n">y</code> <code class="o">+</code> <code class="n">z</code>
+</pre></div>
+
+</div>
+
+<p>When evaluating <code>x + y + z</code>, CoffeeScript will find <code>x</code> and <code>y</code> in the great-grandparent scope and <code>z</code> in the parent scope. The <code>x</code> in the great-great-grandparent scope is ignored, as are both <code>w</code>s. When a variable has the same name as an ancestor environment&#x2019;s binding, it is said to <em>shadow</em> the ancestor.</p>
+
+<p>This is often a good thing.</p>
+
+<h4 id="which-came-first-the-chicken-or-the-egg">which came first, the chicken or the egg?</h4>
+
+<p>This behaviour of pure functions and closures has many, many consequences that can be exploited to write software. We are going to explore them in some detail as well as look at some of the other mechanisms CoffeeScript provides for working with variables and mutable state.</p>
+
+<p>But before we do so, there&#x2019;s one final question: Where does the ancestry start? If there&#x2019;s no other code in a file, what is <code>(x) -&gt; x</code>&#x2019;s parent environment?</p>
+
+<p>CoffeeScript always has the notion of at least one environment we do not control: A global environment in which many useful things are bound such as libraries full of standard functions. So when you invoke <code>((x) -&gt; x)(1)</code> in the REPL, its full environment is going to look like this: <code>{x: 1, '..': </code><em>global environment</em><code>}</code>. When you use CoffeeScript to compile physical files for use in node or web applications, CoffeeScript does something interesting: It wraps your code in an invisible function, like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(()</code> <code class="o">-&gt;</code>
+  <code class="p">((</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code><code class="p">)(</code>1<code class="p">)</code>
+  <code class="p">)()</code>
+</pre></div>
+
+</div>
+
+<p>The effect of this is to insert a new, empty environment in between the global environment and your own functions: <code>{x: 1, '..': {'..': </code><em>global environment</em><code>}}</code>. As we&#x2019;ll see when we discuss mutable state, this helps to prevent programmers from accidentally changing the global state that is shared by code in every file.</p>
+
+<div class="page-break"></div>
+<h3 id="a-simple-question">A Simple Question</h3>
+
+<p>Both of the following produce the exact same result:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">Pi</code> <code class="p">=</code> 3<code class="p">.</code>14159265<code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">diameter</code> <code class="o">*</code> <code class="n">Pi</code>
+</pre></div>
+
+</div>
+
+<p>And:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">Pi</code> <code class="p">=</code> 3<code class="p">.</code>14159265<code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">diameter</code> <code class="o">*</code> <code class="n">Pi</code>
+</pre></div>
+
+</div>
+
+<p>Why do we habitually prefer the former?</p>
+
+<p>To understand this, we&#x2019;re going to take a simple step towards more complex, state-full programs by introducing sequences of expressions. If we had no other tools, we could evaluate a series of expressions with some legerdemain like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">ignore1</code> <code class="p">=</code> <code class="n">foo</code><code class="p">(),</code>
+    <code class="n">ignore2</code> <code class="p">=</code> <code class="n">bar</code><code class="p">(),</code>
+    <code class="n">ignore3</code> <code class="p">=</code> <code class="n">blitz</code><code class="p">(),</code>
+    <code class="n">value</code> <code class="p">=</code> <code class="n">bash</code><code class="p">())</code> <code class="o">-&gt;</code>
+  <code class="n">bash</code>
+</pre></div>
+
+</div>
+
+<p>Or perhaps like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">ignore</code> <code class="p">=</code> <code class="p">[</code><code class="n">foo</code><code class="p">(),</code>  <code class="n">bar</code><code class="p">(),</code> <code class="n">blitz</code><code class="p">()],</code> <code class="n">value</code> <code class="p">=</code> <code class="n">bash</code><code class="p">())</code> <code class="o">-&gt;</code>
+  <code class="n">bash</code>
+</pre></div>
+
+</div>
+
+<p>Or even this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">[</code>
+  <code class="n">foo</code><code class="p">()</code>
+  <code class="n">bar</code><code class="p">()</code>
+  <code class="n">blitz</code><code class="p">()</code> <code class="p">]</code> <code class="n">and</code> <code class="n">bash</code><code class="p">()</code>
+</pre></div>
+
+</div>
+
+<p>Any of these would evaluate <code>foo()</code>, <code>bar()</code>, <code>blitz()</code>, and then return the value of <code>bash()</code> (whatever they might be).</p>
+
+<div class="exercise sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_exercise.png" alt="exercise" />Why doesn&#x2019;t <code>foo() and bar() and blitz() and bash()</code> work reliably?</p>
+
+  <hr /></div>
+
+<p>But let&#x2019;s learn another handy CoffeeScript feature, again because it helps us focus on what is actually going on. Whenever you want to work with the body of a function, you can always have it evaluate a simple sequence of one or more expressions by indenting them. The value of the body is the value of the final expression.</p>
+
+<p>So in that case, we can write something like:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">()</code> <code class="o">-&gt;</code>
+  <code class="n">foo</code><code class="p">()</code>
+  <code class="n">bar</code><code class="p">()</code>
+  <code class="n">blitz</code><code class="p">()</code>
+  <code class="n">bash</code><code class="p">()</code>
+</pre></div>
+
+</div>
+
+<p>Anywhere a simple expression is allowed, you could use a <code>do</code> with a sequence. This doesn&#x2019;t come up as much as you might think, because many of the places you want to do this, CoffeeScript already lets you indent and include more than one expression. For example, in a function body:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">foo</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">bar</code><code class="p">(</code><code class="n">foo</code><code class="p">)</code>
+  <code class="n">bash</code><code class="p">(</code><code class="n">foo</code><code class="p">)</code>
+  <code class="n">foo</code><code class="p">(</code><code class="s">'blitz'</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>So back to our question. Here&#x2019;s a test framework:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">circumference</code> <code class="p">=</code> <code class="n">do</code> <code class="p">(</code><code class="n">Pi</code> <code class="p">=</code> 3<code class="p">.</code>14159265<code class="p">)</code> <code class="o">-&gt;</code>
+                      <code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code>
+                        <code class="n">diameter</code> <code class="o">*</code> <code class="n">Pi</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">circumference</code><code class="p">(</code>1<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>2<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>3<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>4<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>5<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>6<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>7<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>8<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>9<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>10<code class="p">)</code>
+    #<code class="p">=</code><code class="o">&gt;</code> 31<code class="p">.</code>4159265
+</pre></div>
+
+</div>
+
+<p>Let&#x2019;s think about how many functions we are invoking. When this is first invoked, We invoke the outer <code>do (circumference = (...) -&gt;</code>. As part of doing that, we invoke <code>do (Pi = 3.14159265) -&gt;</code> and bind the result to <code>circumference</code>. Then every time we invoke <code>circumference</code>, we invoke <code>(diameter) -&gt;</code>. All together, twelve.</p>
+
+<p>But with:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">circumference</code> <code class="p">=</code> <code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code>
+                      <code class="n">do</code> <code class="p">(</code><code class="n">Pi</code> <code class="p">=</code> 3<code class="p">.</code>14159265<code class="p">)</code> <code class="o">-&gt;</code>
+                        <code class="n">diameter</code> <code class="o">*</code> <code class="n">Pi</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">circumference</code><code class="p">(</code>1<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>2<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>3<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>4<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>5<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>6<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>7<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>8<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>9<code class="p">)</code>
+  <code class="n">circumference</code><code class="p">(</code>10<code class="p">)</code>
+    #<code class="p">=</code><code class="o">&gt;</code> 31<code class="p">.</code>4159265
+</pre></div>
+
+</div>
+
+<p>What happens? There&#x2019;s one outer <code>do (circumference = (...) -&gt;</code>, same as before. And then every time we invoke <code>circumference</code>, we also invoke <code>do (Pi = 3.14159265) -&gt;</code>, so we have a total of twenty-one function invocations. This is nearly twice as expensive.</p>
+
+<div class="page-break"></div>
+<h3 id="summary-functions">Summary: Functions</h3>
+
+<div class="image-with-caption">
+  <p><img src="images/3roasters.jpg" alt="This summary is still being roasted to perfection. Thanks for your patience!" /></p><p>This summary is still being roasted to perfection. Thanks for your patience!</p>
+</div>
+</div>
+<div id="leanpub-toc">
+<h2>Table of Contents</h2>
+<ol class="toc">
+<li class="chapter"><a href="chap00.html#a-pull-of-the-lever-prefaces">A Pull of the Lever: Prefaces</a></li>
+<li class="section"><a href="chap00.html#about-this-book">About This Book</a></li>
+<li class="section"><a href="chap00.html#legend">Legend</a></li>
+<li class="chapter"><a href="chap01.html#prelude-values-and-expressions">Prelude: Values and Expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-expressions">values and expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-identity">values and identity</a></li>
+<li class="chapter"><a href="chap02.html#functions">The first sip: Functions</a></li>
+<li class="section"><a href="chap02.html#as-little-as-possible-about-functions-but-no-less">As Little As Possible About Functions, But No Less</a></li>
+<li class="section"><a href="chap02.html#fargs">Ah. I&#x2019;d Like to Have an Argument, Please.<sup id="fnref-mp">
+  <a href="chap07.html#fn-mp" rel="footnote">6</a>
+</sup></a></li>
+<li class="section"><a href="chap02.html#closures">Closures and Scope</a></li>
+<li class="section"><a href="chap02.html#a-simple-question">A Simple Question</a></li>
+<li class="section"><a href="chap02.html#summary-functions">Summary: Functions</a></li>
+<li class="chapter"><a href="chap03.html#more-functions">Slurp: More About Functions and Scope</a></li>
+<li class="section"><a href="chap03.html#let-me-show-you-what-to-do">Let Me Show You What To Do</a></li>
+<li class="section"><a href="chap03.html#making-things-easy">Making Things Easy</a></li>
+<li class="section"><a href="chap03.html#poco">References, Identity, Arrays, and Objects</a></li>
+<li class="section"><a href="chap03.html#summary-more-about-functions-and-scope">Summary: More About Functions And Scope</a></li>
+<li class="chapter"><a href="chap04.html#mutable">Stir the Espresso: Objects, Mutation, and State</a></li>
+<li class="section"><a href="chap04.html#reassignment-and-mutation">Reassignment and Mutation</a></li>
+<li class="section"><a href="chap04.html#normal-case-variables">Normal Case Variables</a></li>
+<li class="section"><a href="chap04.html#comprehensions">Comprehensions</a></li>
+<li class="section"><a href="chap04.html#encapsulation">Encapsulating State with Closures</a></li>
+<li class="section"><a href="chap04.html#composition">Composition and Extension</a></li>
+<li class="section"><a href="chap04.html#this">This and That</a></li>
+<li class="section"><a href="chap04.html#summary-objects-mutation-and-state">Summary: Objects, Mutation, and State</a></li>
+<li class="chapter"><a href="chap05.html#methods">Finish the Cup: Instances and Classes</a></li>
+<li class="section"><a href="chap05.html#prototypes-are-simple-its-the-explanations-that-are-hard-to-understand">Prototypes are Simple, it&#x2019;s the Explanations that are Hard To Understand</a></li>
+<li class="section"><a href="chap05.html#a-touch-of-class">A Touch of Class</a></li>
+<li class="section"><a href="chap05.html#object-methods">Object Methods</a></li>
+<li class="section"><a href="chap05.html#canonicalization">Canonicalization</a></li>
+<li class="section"><a href="chap05.html#this-section-needs-no-title">This Section Needs No Title</a></li>
+<li class="section"><a href="chap05.html#classextension">Extending Classes</a></li>
+<li class="section"><a href="chap05.html#summary-instances-and-classes">Summary: Instances and Classes</a></li>
+<li class="chapter"><a href="chap06.html#extra-shot">An Extra Shot of Ideas</a></li>
+<li class="section"><a href="chap06.html#combinators">Refactoring to Combinators</a></li>
+<li class="section"><a href="chap06.html#method-decorators">Method Decorators</a></li>
+<li class="section"><a href="chap06.html#callbacks-and-promises">Callbacks and Promises</a></li>
+<li class="section"><a href="chap06.html#summary-an-extra-shot-of-ideas">Summary: An Extra Shot of Ideas</a></li>
+<li class="chapter"><a href="chap07.html#a-golden-crema">A Golden Crema</a></li>
+<li class="section"><a href="chap07.html#online">How to run the examples</a></li>
+<li class="section"><a href="chap07.html#thanks">Thanks!</a></li>
+<li class="section"><a href="chap07.html#copyright-notice">Copyright Notice</a></li>
+<li class="section"><a href="chap07.html#about-the-author">About The Author</a></li>
+</ol>
+</div>
+</body>
+</html>

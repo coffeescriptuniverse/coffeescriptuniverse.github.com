@@ -1,0 +1,475 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Slurp: More About Functions and Scope</title>
+<link href="stylesheet.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+<div id="leanpub-main">
+<h2 id="more-functions">Slurp: More About Functions and Scope</h2>
+
+<div class="image-with-caption">
+  <p><img src="images/diplomatico.jpg" alt="Cafe Diplomatico in Toronto's Little Italy" /></p><p>Cafe Diplomatico in Toronto's Little Italy</p>
+</div>
+
+<div class="page-break"></div>
+<h3 id="let-me-show-you-what-to-do">Let Me Show You What To Do</h3>
+
+<h4 id="let">let</h4>
+
+<p>Up to now, all we&#x2019;ve really seen are <em>anonymous functions</em>, functions that don&#x2019;t have a name. This feels very different from programming in most other languages, where  the focus is on naming functions, methods, and procedures. Naming things is a critical part of programming, but all we&#x2019;ve seen so far is how to name arguments.</p>
+
+<p>There are other ways to name things in CoffeeScript, but before we learn some of those, let&#x2019;s see how to use what we already have to name things. Let&#x2019;s revisit a very simple example:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">diameter</code> <code class="o">*</code> 3<code class="p">.</code>14159265
+</pre></div>
+
+</div>
+
+<p>What is this &#x201C;3.14159265&#x201D; number? <a href="https://en.wikipedia.org/wiki/Pi">Pi</a>, obviously. We&#x2019;d like to name it so that we can write something like:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">diameter</code> <code class="o">*</code> <code class="n">Pi</code>
+</pre></div>
+
+</div>
+
+<p>In order to bind <code>3.14159265</code> to the name <code>Pi</code>, we&#x2019;ll need a function with a parameter of <code>Pi</code> and an argument of <code>3.14159265</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">Pi</code><code class="p">)</code> <code class="o">-&gt;</code>
+  ???
+<code class="p">)(</code>3<code class="p">.</code>14159265<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>What do we put inside our new function that binds <code>3.14159265</code> to the name <code>Pi</code> when evaluated? Our circumference function, of course:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">Pi</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">diameter</code> <code class="o">*</code> <code class="n">Pi</code>
+<code class="p">)(</code>3<code class="p">.</code>14159265<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>This expression, when evaluated, returns a function that calculates circumferences. It differs from our original in that it names the constant Pi. Let&#x2019;s test it:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">((</code><code class="n">Pi</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">diameter</code> <code class="o">*</code> <code class="n">Pi</code>
+<code class="p">)(</code>3<code class="p">.</code>14159265<code class="p">)(</code>2<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 6<code class="p">.</code>2831853
+</pre></div>
+
+</div>
+
+<p>That works! We can bind anything we want and use it in a function by wrapping the function in another function that is immediately invoked with the value we want to bind. This &#x201C;functional programming pattern&#x201D; was popularized in the Lisp programming language more than 50 years ago, where it is called <a href="http://jtra.cz/stuff/lisp/sclr/let.html"><code>let</code></a>.<sup id="fnref-let"><a href="chap07.html#fn-let" rel="footnote">9</a></sup> Although CoffeeScript doesn&#x2019;t have a <code>let</code> keyword, when we discuss this programming pattern we will call it <code>let</code>.</p>
+
+<p><code>let</code> works,<sup id="fnref-letrec"><a href="chap07.html#fn-letrec" rel="footnote">10</a></sup> but only a masochist would write programs this way in CoffeeScript. Besides all the extra characters, it suffers from a fundamental semantic problem: there is a big visual distance between the name <code>Pi</code> and the value <code>3.14159265</code> we bind to it. They should be closer. Is there another way?</p>
+
+<p>Yes.</p>
+
+<h4 id="do">do</h4>
+
+<p>CoffeeScript programmers often wish to create a new environment and bind some values to names within it as <code>let</code> does. To make this easier to read and write, CoffeeScript provides some <em>syntactic sugar</em> called <code>do</code>.<sup id="fnref-ssugar"><a href="chap07.html#fn-ssugar" rel="footnote">11</a></sup></p>
+
+<div class="image-with-caption">
+  <p><img src="images/sugarservice.jpg" alt="Italians seem to prefer espresso with plenty of sugar, while North Americans often drink it without" /></p><p>Italians seem to prefer espresso with plenty of sugar, while North Americans often drink it without</p>
+</div>
+
+<p>This is what our example looks like using <code>do</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">Pi</code> <code class="p">=</code> 3<code class="p">.</code>14159265<code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="p">(</code><code class="n">diameter</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">diameter</code> <code class="o">*</code> <code class="n">Pi</code>
+</pre></div>
+
+</div>
+
+<p>Much, MUCH cleaner.</p>
+
+<p>If you need to create more than one binding, you separate them with commas:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">republican</code> <code class="p">=</code> <code class="s">'Romney'</code><code class="p">,</code> <code class="n">democrat</code> <code class="p">=</code> <code class="s">'Obama'</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">democrat</code>
+</pre></div>
+
+</div>
+
+<div class="exercise sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_exercise.png" alt="exercise" />The value on the right side can be any expression. Try this for yourself:</p>
+
+  <div class="code-block">
+<div class="highlight"><pre><code class="nx">do</code> <code class="p">(</code><code class="nv">Pi = </code><code class="mf">3.14159265</code><code class="p">,</code> <code class="nv">diameter = </code><code class="nf">(radius) -&gt;</code> <code class="nx">radius</code> <code class="o">*</code> <code class="mi">2</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="nf">(radius) -&gt;</code>
+    <code class="nx">diameter</code><code class="p">(</code><code class="nx">radius</code><code class="p">)</code> <code class="o">*</code> <code class="nx">Pi</code>
+</pre></div>
+  
+</div>
+
+  <hr /></div>
+
+<p>Did you try the example above? Did you notice what we slipped in? Yes, obviously, the value of a binding can be any expression. But notice also that we can invoke a function on any expression evaluating to a function, including a variable that looks up a binding in the environment.</p>
+
+<div class="aside sidebarish">
+  <hr /><p>Dozens of pages into the book, we&#x2019;re finally calling a function the way you&#x2019;ll see functions being called in most production code. Sheesh.</p>
+
+  <hr /></div>
+
+<div class="page-break"></div>
+<h3 id="making-things-easy">Making Things Easy</h3>
+
+<p>In <em>CoffeeScript Ristretto</em>, we are focusing on CoffeeScript&#x2019;s <em>semantics</em>, the meaning of CoffeeScript programs. As we go along, we&#x2019;re learning just enough CoffeeScript to understand the next concept simply and directly.</p>
+
+<p>CoffeeScript actually supports a number of syntactic conveniences for making programs extremely readable, by which we mean, making them communicate their intent without asking the programmer to struggle in a <a href="https://en.wikipedia.org/wiki/Turing_tarpit">Turing Tarpit</a>, no matter how elegant.</p>
+
+<h4 id="if-i-were-a-rich-man">if i were a rich man</h4>
+
+<p>For example, it is possible to implement boolean logic using functions, by carefully combining the Identity (<code>(x) -&gt; x</code>), Kestrel (<code>(x) -&gt; (y) -&gt; x</code>), and Vireo (<code>(x) -&gt; (y) -&gt; (z) -&gt; z(x(y))</code>) functions using a clever trick. It look something like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">I</code> <code class="p">=</code> <code class="p">((</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code><code class="p">),</code>
+    <code class="n">K</code> <code class="p">=</code> <code class="p">((</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">x</code><code class="p">),</code>
+    <code class="n">V</code> <code class="p">=</code> <code class="p">((</code><code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="p">(</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="p">(</code><code class="n">z</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="n">z</code><code class="p">(</code><code class="n">x</code><code class="p">(</code><code class="n">y</code><code class="p">)))</code>
+<code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">t</code> <code class="p">=</code> <code class="n">K</code><code class="p">,</code> <code class="n">f</code> <code class="p">=</code> <code class="n">K</code><code class="p">(</code><code class="n">I</code><code class="p">))</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+    # <code class="n">implement</code> <code class="n">logical</code> <code class="n">operators</code> <code class="n">here</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<div class="aside sidebarish">
+  <hr /><p>Did you notice that I slipped a new language feature in, one that allegedly allows a programmer to communicate their intent? Comments in CoffeeScript are signalled by a <code>#</code> and continue to the end of the line, much like <code>//</code> in C++ or JavaScript, and exactly like <code>#</code> in Ruby. If you have ever used <code>C</code> to make a comment line in FORTRAN, you are a <a href="http://www.pbm.com/~lindahl/real.programmers.html" title="Real Programmers Don't Use Pascal">real programmer</a> and ought not to be fooling around with a quiche-eater&#x2019;s language.</p>
+
+  <hr /></div>
+
+<p>This is extraordinarily fascinating computer science stuff, but you can read about that <a href="http://www.amzn.com/0192801422?tag=raganwald001-20" title="To Mock a Mockingbird">elsewhere</a>. CoffeeScript supplies <code>true</code>, <code>false</code>, <code>and</code>, <code>or</code>, and <code>not</code> so you don&#x2019;t need to roll your own out of functions. But while we&#x2019;re talking about logic, CoffeeScript also supplies conditional branches of execution, and we&#x2019;ll use those in examples to come.</p>
+
+<p>The syntax is remarkably simple. Here&#x2019;s a <a href="http://coffeescript.org/#conditionals">conditional expression</a>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">if</code> <code class="n">d</code> <code class="o">&lt;</code> 32 <code class="n">then</code> <code class="s">'freezing'</code> <code class="k">else</code> <code class="s">'warm'</code>
+</pre></div>
+
+</div>
+
+<p>Since it&#x2019;s an expression, you can put it in parentheses and stick it anywhere you like, including inside another conditional:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">d</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="k">if</code> <code class="n">d</code> <code class="o">&lt;</code> 32 <code class="n">then</code> <code class="s">'solid'</code> <code class="k">else</code> <code class="k">if</code> <code class="n">d</code> <code class="o">&lt;</code> 212 <code class="n">then</code> <code class="s">'liquid'</code> <code class="k">else</code> <code class="s">'gas'</code>
+</pre></div>
+
+</div>
+
+<p>Like function bodies, there is an indented form that can be more readable:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(</code><code class="n">d</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="k">if</code> <code class="n">d</code> <code class="o">&lt;</code> 32
+    <code class="s">'solid'</code>
+  <code class="k">else</code>
+    <code class="k">if</code> <code class="n">d</code> <code class="o">&lt;</code> 212
+      <code class="s">'liquid'</code>
+    <code class="k">else</code>
+      <code class="s">'gas'</code>
+</pre></div>
+
+</div>
+
+<p>And the indented lines can have multiple expressions should you so desire:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">if</code> <code class="n">frobbish</code>?
+  <code class="n">alert</code><code class="p">(</code>"<code class="n">Frobbish</code> <code class="n">value</code><code class="p">:</code> #<code class="p">{</code><code class="n">frobbish</code><code class="p">}</code>"<code class="p">)</code>
+  <code class="n">snarglivate</code><code class="p">(</code><code class="n">frobbish</code><code class="p">)</code>
+  <code class="n">frobbish</code>
+</pre></div>
+
+</div>
+
+<div class="page-break"></div>
+<h3 id="poco">References, Identity, Arrays, and Objects</h3>
+
+<h4 id="a-simple-question-1">a simple question</h4>
+
+<p>Consider this code:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">x</code> <code class="p">=</code> <code class="s">'June 14, 1962'</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">y</code> <code class="p">=</code> <code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">x</code> <code class="n">is</code> <code class="n">y</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>This makes obvious sense, because we know that strings are a value type, so no matter what expression you use to derive the value &#x2018;June 14, 1962&#x2019;, you are going to get a string with the exact same identity.</p>
+
+<p>But what about this code?</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">x</code> <code class="p">=</code> <code class="p">[</code>2012<code class="p">,</code> 6<code class="p">,</code> 14<code class="p">])</code> <code class="o">-&gt;</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">y</code> <code class="p">=</code> <code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">x</code> <code class="n">is</code> <code class="n">y</code>
+    #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Also true, even though we know that every time we evaluate an expression such as <code>[2012, 6, 14]</code>, we get a new array with a new identity. So what is happening in our environments?</p>
+
+<h4 id="arguments-and-references">arguments and references</h4>
+
+<p>In our discussion of <a href="chap02.html#closures">closures</a>, we said that environments bind values (like <code>[2012, 6, 14]</code>) to names (like <code>x</code> and <code>y</code>), and that when we use these names as expressions, the name evaluates as the value.</p>
+
+<p>What this means is that when we write something like <code>do (y = x) -&gt;</code>, the name <code>x</code> is looked up in the current environment, and its value is a specific array that was created when the expression <code>[2012, 6, 14]</code> was first evaluated. We then bind <em>that exact same value</em> to the name <code>y</code> in a new environment, and thus <code>x</code> and <code>y</code> are both bound to the exact same value, which is identical to itself.</p>
+
+<p>The same thing happens with binding a variable through a more conventional means of applying a function to arguments:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">x</code> <code class="p">=</code> <code class="p">[</code>2012<code class="p">,</code> 6<code class="p">,</code> 14<code class="p">])</code> <code class="o">-&gt;</code>
+  <code class="p">((</code><code class="n">y</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">x</code> <code class="n">is</code> <code class="n">y</code><code class="p">)(</code><code class="n">x</code><code class="p">)</code>
+    #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p><code>x</code> and <code>y</code> both end up bound to the exact same array, not two different arrays that look the same to our eyes.</p>
+
+<h4 id="arguments-and-arrays">arguments and arrays</h4>
+
+<p>CoffeeScript provides two different kinds of containers for values. We&#x2019;ve met one already, the array. Let&#x2019;s see how it treats values and identities. For starters, we&#x2019;ll learn how to extract a value from an array. We&#x2019;ll start with a function that makes a new value with a unique identity every time we call it. We already know that every function we create is unique, so that&#x2019;s what we&#x2019;ll use:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">unique</code> <code class="p">=</code> <code class="p">(()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code><code class="p">))</code> <code class="o">-&gt;</code>
+
+  <code class="n">unique</code><code class="p">()</code>
+    # <code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code><code class="n">Function</code><code class="p">]</code>
+  <code class="n">unique</code><code class="p">()</code> <code class="n">is</code> <code class="n">unique</code><code class="p">()</code>
+    # <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>Let&#x2019;s verify that what we said about references applies to functions as well as arrays:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>  <code class="n">do</code> <code class="p">(</code><code class="n">x</code> <code class="p">=</code> <code class="n">unique</code><code class="p">())</code> <code class="o">-&gt;</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">y</code> <code class="p">=</code> <code class="n">x</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">x</code> <code class="n">is</code> <code class="n">y</code>
+    #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Ok. So what about things <em>inside</em> arrays? We know how to crate an array with something inside it:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>  <code class="p">[</code> <code class="n">unique</code><code class="p">()</code> <code class="p">]</code>
+    #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> <code class="p">[</code><code class="n">Function</code><code class="p">]</code> <code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>That&#x2019;s an array with one of our unique functions in it. How do we get something <em>out</em> of it?</p>
+
+<div class="code-block">
+<div class="highlight"><pre>  <code class="n">do</code> <code class="p">(</code><code class="n">a</code> <code class="p">=</code> <code class="p">[</code> <code class="s">'hello'</code> <code class="p">])</code> <code class="o">-&gt;</code>
+    <code class="n">a</code><code class="p">[</code>0<code class="p">]</code>
+    #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'hello'</code>
+</pre></div>
+
+</div>
+
+<p>Cool, arrays work a lot like arrays in other languages and are zero-based. The trouble with this example is that strings are value types in CoffeeScript, so we have no idea whether <code>a[0]</code> always gives us the same value back like looking up a name in an environment, or whether it does some magic that tries to give us a new value.</p>
+
+<p>Let&#x2019;s test it:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">unique</code> <code class="p">=</code> <code class="p">(()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code><code class="p">))</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">x</code> <code class="p">=</code> <code class="n">unique</code><code class="p">())</code> <code class="o">-&gt;</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">a</code> <code class="p">=</code> <code class="p">[</code> <code class="n">x</code> <code class="p">])</code> <code class="o">-&gt;</code>
+      <code class="n">a</code><code class="p">[</code>0<code class="p">]</code> <code class="n">is</code> <code class="n">x</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>If we get a value out of an array using the <code>[]</code> suffix, it&#x2019;s the exact same value with the same identity. Question: Does that apply to other locations in the array? Yes:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">unique</code> <code class="p">=</code> <code class="p">(()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code><code class="p">))</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">x</code> <code class="p">=</code> <code class="n">unique</code><code class="p">(),</code> <code class="n">y</code> <code class="p">=</code> <code class="n">unique</code><code class="p">(),</code> <code class="n">z</code> <code class="p">=</code> <code class="n">unique</code><code class="p">())</code> <code class="o">-&gt;</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">a</code> <code class="p">=</code> <code class="p">[</code> <code class="n">x</code><code class="p">,</code> <code class="n">y</code><code class="p">,</code> <code class="n">z</code> <code class="p">])</code> <code class="o">-&gt;</code>
+      <code class="n">a</code><code class="p">[</code>0<code class="p">]</code> <code class="n">is</code> <code class="n">x</code> <code class="n">and</code> <code class="n">a</code><code class="p">[</code>1<code class="p">]</code> <code class="n">is</code> <code class="n">y</code> <code class="n">and</code> <code class="n">a</code><code class="p">[</code>2<code class="p">]</code> <code class="n">is</code> <code class="n">z</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<h4 id="references-and-objects">references and objects</h4>
+
+<p>CoffeeScript also provides objects. The word &#x201C;object&#x201D; is loaded in programming circles, due to the widespread use of the term &#x201C;object-oriented programming&#x201D; that was coined by Alan Kay but has since come to mean many, many things to many different people.</p>
+
+<p>In CoffeeScript, an object<sup id="fnref-poco"><a href="chap07.html#fn-poco" rel="footnote">12</a></sup> is a map from names to values, a lot like an environment. The most common syntax for creating an object is simple:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code> <code class="n">year</code><code class="p">:</code> 2012<code class="p">,</code> <code class="n">month</code><code class="p">:</code> 6<code class="p">,</code> <code class="n">day</code><code class="p">:</code> 14 <code class="p">}</code>
+</pre></div>
+
+</div>
+
+<p>Two objects created this way have differing identities, just like arrays:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code> <code class="n">year</code><code class="p">:</code> 2012<code class="p">,</code> <code class="n">month</code><code class="p">:</code> 6<code class="p">,</code> <code class="n">day</code><code class="p">:</code> 14 <code class="p">}</code> <code class="n">is</code> <code class="p">{</code> <code class="n">year</code><code class="p">:</code> 2012<code class="p">,</code> <code class="n">month</code><code class="p">:</code> 6<code class="p">,</code> <code class="n">day</code><code class="p">:</code> 14 <code class="p">}</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>Objects use <code>[]</code> to access the values by name, but instead of using a plain name, we use a string:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code> <code class="n">year</code><code class="p">:</code> 2012<code class="p">,</code> <code class="n">month</code><code class="p">:</code> 6<code class="p">,</code> <code class="n">day</code><code class="p">:</code> 14 <code class="p">}[</code><code class="s">'day'</code><code class="p">]</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 14
+</pre></div>
+
+</div>
+
+<p>Values contained within an object work just like values contained within an array:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code><code class="n">unique</code> <code class="p">=</code> <code class="p">(()</code> <code class="o">-&gt;</code> <code class="p">()</code> <code class="o">-&gt;</code><code class="p">))</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">x</code> <code class="p">=</code> <code class="n">unique</code><code class="p">(),</code> <code class="n">y</code> <code class="p">=</code> <code class="n">unique</code><code class="p">(),</code> <code class="n">z</code> <code class="p">=</code> <code class="n">unique</code><code class="p">())</code> <code class="o">-&gt;</code>
+    <code class="n">do</code> <code class="p">(</code><code class="n">o</code> <code class="p">=</code> <code class="p">{</code> <code class="n">a</code><code class="p">:</code> <code class="n">x</code><code class="p">,</code> <code class="n">b</code><code class="p">:</code> <code class="n">y</code><code class="p">,</code> <code class="n">c</code><code class="p">:</code> <code class="n">z</code> <code class="p">})</code> <code class="o">-&gt;</code>
+      <code class="n">o</code><code class="p">[</code><code class="s">'a'</code><code class="p">]</code> <code class="n">is</code> <code class="n">x</code> <code class="n">and</code> <code class="n">o</code><code class="p">[</code><code class="s">'b'</code><code class="p">]</code> <code class="n">is</code> <code class="n">y</code> <code class="n">and</code> <code class="n">o</code><code class="p">[</code><code class="s">'c'</code><code class="p">]</code> <code class="n">is</code> <code class="n">z</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Names needn&#x2019;t be alphanumeric strings. For anything else, enclose the label in quotes:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code> <code class="s">'first name'</code><code class="p">:</code> <code class="s">'reginald'</code><code class="p">,</code> <code class="s">'last name'</code><code class="p">:</code> <code class="s">'lewis'</code> <code class="p">}[</code><code class="s">'first name'</code><code class="p">]</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'reginald'</code>
+</pre></div>
+
+</div>
+
+<p>If the name is an alphanumeric string conforming to the same rules as names of variables, there&#x2019;s a simplified syntax for accessing the values:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code> <code class="n">year</code><code class="p">:</code> 2012<code class="p">,</code> <code class="n">month</code><code class="p">:</code> 6<code class="p">,</code> <code class="n">day</code><code class="p">:</code> 14 <code class="p">}</code> <code class="n">is</code> <code class="p">{</code> <code class="n">year</code><code class="p">:</code> 2012<code class="p">,</code> <code class="n">month</code><code class="p">:</code> 6<code class="p">,</code> <code class="n">day</code><code class="p">:</code> 14 <code class="p">}.</code><code class="n">day</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>All containers can contain any value, including functions or other containers:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">do</code> <code class="p">(</code> <code class="n">Mathematics</code> <code class="p">=</code> <code class="p">{</code> <code class="nb">abs</code><code class="p">:</code> <code class="p">(</code><code class="n">a</code><code class="p">)</code> <code class="o">-&gt;</code> <code class="k">if</code> <code class="n">a</code> <code class="o">&lt;</code> 0 <code class="n">then</code> <code class="o">-</code><code class="n">a</code> <code class="k">else</code> <code class="n">a</code> <code class="p">})</code> <code class="o">-&gt;</code>
+  <code class="n">Mathematics</code><code class="p">.</code><code class="nb">abs</code><code class="p">(</code><code class="o">-</code>5<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 5
+</pre></div>
+
+</div>
+
+<p>Funny we should mention <code>Mathematics</code>. If you recall, CoffeeScript provides a global environment that contains some existing object that have handy functions you can use. One of them is called <code>Math</code>, and it contains functions for <code>abs</code>, <code>max</code>, <code>min</code>, and many others. SInce it is always available, you can use it in any environment provided you don&#x2019;t shadow <code>Math</code>.</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">Math</code><code class="p">.</code><code class="nb">abs</code><code class="p">(</code><code class="o">-</code>5<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> 5
+</pre></div>
+
+</div>
+
+<div class="page-break"></div>
+<h3 id="summary-more-about-functions-and-scope">Summary: More About Functions And Scope</h3>
+
+<div class="image-with-caption">
+  <p><img src="images/diedrich-roaster.jpg" alt="This summary is still being roasted to perfection. Thanks for your patience!" /></p><p>This summary is still being roasted to perfection. Thanks for your patience!</p>
+</div>
+
+<h4 id="interlude-1">interlude&#x2026;</h4>
+
+<div class="image-with-caption">
+  <p><img src="images/mirage.jpg" alt="A beautiful espresso machine" /></p><p>A beautiful espresso machine</p>
+</div>
+
+<p><a href="http://www.ineedcoffee.com/07/ristretto-rant/">Michael Allen Smith</a> on Ristretto:</p>
+
+<blockquote>
+  <p>&#x201C;It must have been 1996. I was living in South Tampa at the time and the area finally got a great coffee house. The place was Jet City Espresso. Don&#x2019;t go looking for it. It is no longer there. As the name implies, the owner Jessica was from Seattle and shared her coffee knowledge with her customers. After ordering numerous americanos and espressos, Jessica thought it was time I tried a ristretto. I expected the short pull of the espresso shot would result in a more bitter flavor. To my delight the shot was actually a sweeter and more intense version of her espresso blend.&#x201D;</p>
+</blockquote>
+
+<div class="page-break"></div>
+</div>
+<div id="leanpub-toc">
+<h2>Table of Contents</h2>
+<ol class="toc">
+<li class="chapter"><a href="chap00.html#a-pull-of-the-lever-prefaces">A Pull of the Lever: Prefaces</a></li>
+<li class="section"><a href="chap00.html#about-this-book">About This Book</a></li>
+<li class="section"><a href="chap00.html#legend">Legend</a></li>
+<li class="chapter"><a href="chap01.html#prelude-values-and-expressions">Prelude: Values and Expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-expressions">values and expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-identity">values and identity</a></li>
+<li class="chapter"><a href="chap02.html#functions">The first sip: Functions</a></li>
+<li class="section"><a href="chap02.html#as-little-as-possible-about-functions-but-no-less">As Little As Possible About Functions, But No Less</a></li>
+<li class="section"><a href="chap02.html#fargs">Ah. I&#x2019;d Like to Have an Argument, Please.<sup id="fnref-mp">
+  <a href="chap07.html#fn-mp" rel="footnote">6</a>
+</sup></a></li>
+<li class="section"><a href="chap02.html#closures">Closures and Scope</a></li>
+<li class="section"><a href="chap02.html#a-simple-question">A Simple Question</a></li>
+<li class="section"><a href="chap02.html#summary-functions">Summary: Functions</a></li>
+<li class="chapter"><a href="chap03.html#more-functions">Slurp: More About Functions and Scope</a></li>
+<li class="section"><a href="chap03.html#let-me-show-you-what-to-do">Let Me Show You What To Do</a></li>
+<li class="section"><a href="chap03.html#making-things-easy">Making Things Easy</a></li>
+<li class="section"><a href="chap03.html#poco">References, Identity, Arrays, and Objects</a></li>
+<li class="section"><a href="chap03.html#summary-more-about-functions-and-scope">Summary: More About Functions And Scope</a></li>
+<li class="chapter"><a href="chap04.html#mutable">Stir the Espresso: Objects, Mutation, and State</a></li>
+<li class="section"><a href="chap04.html#reassignment-and-mutation">Reassignment and Mutation</a></li>
+<li class="section"><a href="chap04.html#normal-case-variables">Normal Case Variables</a></li>
+<li class="section"><a href="chap04.html#comprehensions">Comprehensions</a></li>
+<li class="section"><a href="chap04.html#encapsulation">Encapsulating State with Closures</a></li>
+<li class="section"><a href="chap04.html#composition">Composition and Extension</a></li>
+<li class="section"><a href="chap04.html#this">This and That</a></li>
+<li class="section"><a href="chap04.html#summary-objects-mutation-and-state">Summary: Objects, Mutation, and State</a></li>
+<li class="chapter"><a href="chap05.html#methods">Finish the Cup: Instances and Classes</a></li>
+<li class="section"><a href="chap05.html#prototypes-are-simple-its-the-explanations-that-are-hard-to-understand">Prototypes are Simple, it&#x2019;s the Explanations that are Hard To Understand</a></li>
+<li class="section"><a href="chap05.html#a-touch-of-class">A Touch of Class</a></li>
+<li class="section"><a href="chap05.html#object-methods">Object Methods</a></li>
+<li class="section"><a href="chap05.html#canonicalization">Canonicalization</a></li>
+<li class="section"><a href="chap05.html#this-section-needs-no-title">This Section Needs No Title</a></li>
+<li class="section"><a href="chap05.html#classextension">Extending Classes</a></li>
+<li class="section"><a href="chap05.html#summary-instances-and-classes">Summary: Instances and Classes</a></li>
+<li class="chapter"><a href="chap06.html#extra-shot">An Extra Shot of Ideas</a></li>
+<li class="section"><a href="chap06.html#combinators">Refactoring to Combinators</a></li>
+<li class="section"><a href="chap06.html#method-decorators">Method Decorators</a></li>
+<li class="section"><a href="chap06.html#callbacks-and-promises">Callbacks and Promises</a></li>
+<li class="section"><a href="chap06.html#summary-an-extra-shot-of-ideas">Summary: An Extra Shot of Ideas</a></li>
+<li class="chapter"><a href="chap07.html#a-golden-crema">A Golden Crema</a></li>
+<li class="section"><a href="chap07.html#online">How to run the examples</a></li>
+<li class="section"><a href="chap07.html#thanks">Thanks!</a></li>
+<li class="section"><a href="chap07.html#copyright-notice">Copyright Notice</a></li>
+<li class="section"><a href="chap07.html#about-the-author">About The Author</a></li>
+</ol>
+</div>
+</body>
+</html>

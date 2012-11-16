@@ -1,0 +1,1088 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Finish the Cup: Instances and Classes</title>
+<link href="stylesheet.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+<div id="leanpub-main">
+<h2 id="methods">Finish the Cup: Instances and Classes</h2>
+
+<div class="image-with-caption">
+  <p><img src="images/beans1.jpg" alt="Other languages call their objects &quot;beans,&quot; but serve extra-weak coffee in an attempt to be all things to all people" /></p><p>Other languages call their objects "beans," but serve extra-weak coffee in an attempt to be all things to all people</p>
+</div>
+
+<p>As discussed in <a href="chap03.html#poco">References, Identity, Arrays, and Objects</a> and again in <a href="chap04.html#encapsulation">Encapsulating State</a>, CoffeeScript objects are very simple, yet the combination of objects, functions, and closures can create powerful data structures. That being said, there are language features that cannot be implemented with Plain Old CoffeeScript Objects, functions, and closures<sup id="fnref-turing"><a href="chap07.html#fn-turing" rel="footnote">20</a></sup>.</p>
+
+<p>One of them is <em>inheritance</em>. In CoffeeScript, inheritance provides a cleaner, simpler mechanism for extending data structures, domain models, and anything else you represent as a bundle of state and operations.</p>
+
+<div class="page-break"></div>
+<h3 id="prototypes-are-simple-its-the-explanations-that-are-hard-to-understand">Prototypes are Simple, it&#x2019;s the Explanations that are Hard To Understand</h3>
+
+<p>As you recall from our code for making objects <a href="chap04.html#extensible">extensible</a>, we wrote a function that returned a Plain Old CoffeeScript Object. The colloquial term for this kind of function is a &#x201C;Factory Function.&#x201D;</p>
+
+<p>Let&#x2019;s strip a function down to the very bare essentials:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">Ur</code> <code class="p">=</code> <code class="p">()</code> <code class="o">-&gt;</code>
+</pre></div>
+
+</div>
+
+<p>This doesn&#x2019;t look like a factory function: It doesn&#x2019;t have an expression that yields a Plain Old CoffeeScript Object when the function is applied. Yet, there is a way to make an object out of it. Behold the power of the <code>new</code> keyword:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">new</code> <code class="n">Ur</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">{}</code>
+</pre></div>
+
+</div>
+
+<p>We got an object back! What can we find out about this object?</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">new</code> <code class="n">Ur</code><code class="p">()</code> <code class="n">is</code> <code class="n">new</code> <code class="n">Ur</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>Every time we call <code>new</code> with a function and get an object back, we get a unique object. We could call these &#x201C;Objects created with the <code>new</code> keyword,&#x201D; but this would be cumbersome. So we&#x2019;re going to call them <em>instances</em>. Instances of what? Instances of the function that creates them. So given <code>i = new Ur()</code>, we say that <code>i</code> is an instance of <code>Ur</code>.</p>
+
+<p>For reasons that will be explained after we&#x2019;ve discussed prototypes, we also say that <code>Ur</code> is the <em>constructor</em> of <code>i</code>, and that <code>Ur</code> is a <em>constructor function</em>. Therefore, an instance is an object created by using the <code>new</code> keyword on a constructor function, and that function is the instance&#x2019;s constructor.</p>
+
+<h4 id="prototypes">prototypes</h4>
+
+<p>There&#x2019;s more. Here&#x2019;s something you may not know about functions:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">Ur</code><code class="p">.</code><code class="n">prototype</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">{}</code>
+</pre></div>
+
+</div>
+
+<p>What&#x2019;s this prototype? Let&#x2019;s run our standard test:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">(()</code> <code class="o">-&gt;</code><code class="p">).</code><code class="n">prototype</code> <code class="n">is</code> <code class="p">(()</code> <code class="o">-&gt;</code><code class="p">).</code><code class="n">prototype</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>Every function is initialized with its own unique <code>prototype</code>. What does it do? Let&#x2019;s try something:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">Ur</code><code class="p">.</code><code class="n">prototype</code><code class="p">.</code><code class="n">language</code> <code class="p">=</code> <code class="s">'CoffeeScript'</code>
+
+<code class="n">continent</code> <code class="p">=</code> <code class="n">new</code> <code class="n">Ur</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">{}</code>
+<code class="n">continent</code><code class="p">.</code><code class="n">language</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'CoffeeScript'</code>
+</pre></div>
+
+</div>
+
+<p>That&#x2019;s very interesting! Instances seem to behave as if they had the same elements as their constructor&#x2019;s prototype. Let&#x2019;s try a few things:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">continent</code><code class="p">.</code><code class="n">language</code> <code class="p">=</code> <code class="s">'JavaScript'</code>
+<code class="n">continent</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">{</code><code class="n">language</code><code class="p">:</code> <code class="s">'JavaScript'</code><code class="p">}</code>
+<code class="n">continent</code><code class="p">.</code><code class="n">language</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'JavaScript'</code>
+<code class="n">Ur</code><code class="p">.</code><code class="n">prototype</code><code class="p">.</code><code class="n">language</code>
+  <code class="s">'CoffeeScript'</code>
+</pre></div>
+
+</div>
+
+<p>You can set elements of an instance, and they &#x201C;override&#x201D; the constructor&#x2019;s prototype, but they don&#x2019;t actually change the constructor&#x2019;s prototype. Let&#x2019;s make another instance and try something else.</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">another</code> <code class="p">=</code> <code class="n">new</code> <code class="n">Ur</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">{}</code>
+<code class="n">another</code><code class="p">.</code><code class="n">language</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'CoffeeScript'</code>
+</pre></div>
+
+</div>
+
+<p>New instances don&#x2019;t acquire any changes made to other instances. Makes sense. And:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">Ur</code><code class="p">.</code><code class="n">prototype</code><code class="p">.</code><code class="n">language</code> <code class="p">=</code> <code class="s">'Sumerian'</code>
+<code class="n">another</code><code class="p">.</code><code class="n">language</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'Sumerian'</code>
+</pre></div>
+
+</div>
+
+<p>Even more interesting: Changing the constructor&#x2019;s prototype changes the behaviour of all of its instances. This strongly implies that there is a dynamic relationship between instances and their constructors, rather than some kind of mechanism that makes objects by copying.<sup id="fnref-dynamic"><a href="chap07.html#fn-dynamic" rel="footnote">21</a></sup></p>
+
+<p>Speaking of prototypes, here&#x2019;s something else that&#x2019;s very interesting:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">continent</code><code class="p">.</code><code class="n">constructor</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code><code class="n">Function</code><code class="p">]</code>
+  
+<code class="n">continent</code><code class="p">.</code><code class="n">constructor</code> <code class="n">is</code> <code class="n">Ur</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Every instance acquires a <code>constructor</code> element that is initialized to their constructor. This is true even for objects we don&#x2019;t create with <code>new</code> in our own code:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{}.</code><code class="n">constructor</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code><code class="n">Function</code><code class="p">:</code> <code class="n">Object</code><code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>If that&#x2019;s true, what about prototypes? Do they have constructors?</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">Ur</code><code class="p">.</code><code class="n">prototype</code><code class="p">.</code><code class="n">constructor</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code><code class="n">Function</code><code class="p">]</code>
+<code class="n">Ur</code><code class="p">.</code><code class="n">prototype</code><code class="p">.</code><code class="n">constructor</code> <code class="n">is</code> <code class="n">Ur</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Very interesting! We will take another look at the <code>constructor</code> element when we discuss <a href="chap05.html#classextension">class extension</a>.</p>
+
+<h4 id="revisiting-this-idea-of-queues">revisiting <code>this</code> idea of queues</h4>
+
+<p>Let&#x2019;s rewrite our Queue to use <code>new</code> and <code>.prototype</code>, using <code>this</code> and <code>=&gt;</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">extend</code> <code class="p">=</code> <code class="p">(</code><code class="n">object</code><code class="p">,</code> <code class="n">extensions</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">object</code><code class="p">[</code><code class="n">key</code><code class="p">]</code> <code class="p">=</code> <code class="n">value</code> <code class="k">for</code> <code class="n">key</code><code class="p">,</code> <code class="n">value</code> <code class="n">of</code> <code class="n">extensions</code>
+  <code class="n">object</code>
+
+<code class="n">Queue</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">extend</code><code class="p">(</code><code class="n">this</code><code class="p">,</code>
+    <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+    <code class="n">head</code><code class="p">:</code> 0
+    <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+  <code class="p">)</code>
+  
+<code class="n">extend</code><code class="p">(</code><code class="n">Queue</code><code class="p">.</code><code class="n">prototype</code><code class="p">,</code>
+  <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+  <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+        <code class="n">value</code>
+  <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="n">this</code><code class="p">.</code><code class="n">head</code>
+<code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>You recall that when we first looked at <code>this</code>, we only covered the case where a function that belongs to an object is invoked. Now we see another case: When a function is invoked by the <code>new</code> operator, <code>this</code> is set to the new object being created. Thus, our code for <code>Queue</code> initializes the queue.</p>
+
+<p>You can see why <code>this</code> is so handy in CoffeeScript: We wouldn&#x2019;t be able to define functions in the prototype that worked on the instance if CoffeeScript didn&#x2019;t give us an easy way to refer to the instance itself.</p>
+
+<h4 id="objects-everywhere">objects everywhere?</h4>
+
+<p>Now that you know about prototypes, it&#x2019;s time to acknowledge something that even small children know: Everything in CoffeeScript behaves like an object, everything in CoffeeScript behaves like an instance of a function, and therefore everything in CoffeeScript behaves as if it inherits some methods from its constructor&#x2019;s prototype and/or has some elements of its own.</p>
+
+<p>For example:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>3<code class="p">.</code>14159265<code class="p">.</code><code class="n">toPrecision</code><code class="p">(</code>5<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'3.1415'</code>
+  
+<code class="s">'FORTRAN, SNOBOL, LISP, BASIC'</code><code class="p">.</code><code class="n">split</code><code class="p">(</code><code class="s">', '</code><code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code> <code class="s">'FORTRAN'</code><code class="p">,</code>
+  #     <code class="s">'SNOBOL'</code><code class="p">,</code>
+  #     <code class="s">'LISP'</code><code class="p">,</code>
+  #     <code class="s">'BASIC'</code> <code class="p">]</code>
+  
+<code class="p">[</code> <code class="s">'FORTRAN'</code><code class="p">,</code>
+  <code class="s">'SNOBOL'</code><code class="p">,</code>
+  <code class="s">'LISP'</code><code class="p">,</code>
+  <code class="s">'BASIC'</code> <code class="p">].</code><code class="nb">length</code>
+#<code class="p">=</code><code class="o">&gt;</code> 5
+</pre></div>
+
+</div>
+
+<p>Functions themselves are instances, and they have methods. For example, we know that CoffeeScript treats the fat arrow as if you were using the <code>this</code> and <code>that</code> idiom. But if you didn&#x2019;t have a fat arrow and you didn&#x2019;t want to take a chance on getting the idiom wrong, you could take advantage of the fact that every function has a method <code>call</code>.</p>
+
+<p>Call&#x2019;s first argument is a <em>context</em>: When you invoke <code>.call</code> on a function, it invoked the function, setting <code>this</code> to the context. It passes the remainder of the arguments to the function.</p>
+
+<p>So, if we have:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>  <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+        <code class="n">value</code>
+</pre></div>
+
+</div>
+
+<p>We could also write it like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>  <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="p">((</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+        <code class="n">value</code>
+      <code class="p">).</code><code class="n">call</code><code class="p">(</code><code class="n">this</code><code class="p">,</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">])</code>
+</pre></div>
+
+</div>
+
+<p>It seems like are objects everywhere in CoffeeScript!</p>
+
+<div class="tip sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" /><strong>So what do we know about prototypes?</strong></p>
+
+  <ul><li>The <code>new</code> keyword turns any function into a <em>constructor</em> for creating <em>instances</em>.</li>
+    <li>All functions have a <code>prototype</code> element.</li>
+    <li>Instances behave as if the elements of their constructor&#x2019;s prototype are their elements.</li>
+    <li>Instances can override their constructor&#x2019;s prototype without altering it.</li>
+    <li>The relationship between instances and their constructor&#x2019;s prototype is dynamic.</li>
+    <li><code>this</code> works seamlessly with methods defined in prototypes.</li>
+    <li>Everything behaves like an object.</li>
+  </ul><hr /></div>
+
+<div class="page-break"></div>
+<h4 id="impostors">impostors</h4>
+
+<p>You may have noticed that we use &#x201C;weasel words&#x201D; to describe how everything in CoffeeScript <em>behaves like</em> an instance. Everything <em>behaves as if</em> it was created by a function with a prototype.</p>
+
+<p>The full explanation is this: As you know, CoffeeScript has &#x201C;value types&#x201D; like <code>String</code>, <code>Number</code>, and <code>Boolean</code>. As noted in the first chapter, value types are also called <em>primitives</em>, and one consequence of the way CoffeeScript implements primitives is that they aren&#x2019;t objects. Which means they can be identical to other values of the same type with the same contents, but the consequence of certain design decisions is that value types don&#x2019;t actually have methods or constructors. They aren&#x2019;t instances of some constructor.</p>
+
+<p>So. Value types don&#x2019;t have methods or constructors. And yet:</p>
+
+<div class="code-block">
+<div class="highlight"><pre>"<code class="n">Spence</code> <code class="n">Olham</code>"<code class="p">.</code><code class="n">split</code><code class="p">(</code><code class="s">' '</code><code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="p">[</code>"<code class="n">Spence</code>"<code class="p">,</code> "<code class="n">Olham</code>"<code class="p">]</code>
+</pre></div>
+
+</div>
+
+<p>Somehow, when we write <code>"Spence Olham".split(' ')</code>, the string <code>"Spence Olham"</code> isn&#x2019;t an instance, it doesn&#x2019;t have methods, but it does a damn fine job of impersonating an instance of a <code>String</code> constructor. How does <code>"Spence Olham"</code> impersonate an instance?</p>
+
+<p>CoffeeScript pulls some legerdemain. When you do something that treats a valu like an object, CoffeeScript checks to see whether the value actually is an object. If the value is actually a primitive,<sup id="fnref-reminder"><a href="chap07.html#fn-reminder" rel="footnote">22</a></sup> CoffeeScript temporarily makes an object that is a kinda-sorta copy of the primitive and that kinda-sorta copy has methods and you are temporarily fooled into thinking that <code>"Spence Olham"</code> has a <code>.split</code> method.</p>
+
+<p>These kinda-sorta copies are called String <em>instances</em> as opposed to String <em>primitives</em>. And the instances have methods, while the primitives do not. How does CoffeeScript make an instance out of a primitive? With <code>new</code>, of course. Let&#x2019;s try it:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">new</code> <code class="n">String</code><code class="p">(</code>"<code class="n">Spence</code> <code class="n">Olham</code>"<code class="p">)</code>
+  #<code class="p">=</code><code class="o">&gt;</code> "<code class="n">Spence</code> <code class="n">Olham</code>"
+</pre></div>
+
+</div>
+
+<p>The string instance looks just like our string primitive. But does it behave like a  string primitive? Not entirely:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">new</code> <code class="n">String</code><code class="p">(</code>"<code class="n">Spence</code> <code class="n">Olham</code>"<code class="p">)</code> <code class="n">is</code> "<code class="n">Spence</code> <code class="n">Olham</code>"
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>Aha! It&#x2019;s an object with its own identity, unlike string primitives that behave as if they have a canonical representation. If we didn&#x2019;t care about their identity, that wouldn&#x2019;t be a problem. But if we carelessly used a string instance where we thought we had a string primitive, we could run into a subtle bug:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">if</code> <code class="n">userName</code> <code class="n">is</code> "<code class="n">Spence</code> <code class="n">Olham</code>"
+  <code class="n">getMarried</code><code class="p">()</code>
+  <code class="n">goCamping</code><code class="p">()</code>
+</pre></div>
+
+</div>
+
+<p>That code is not going to work as we expect should we accidentally bind <code>new String("Spence Olham")</code> to <code>userName</code> instead of the primitive <code>"Spence Olham"</code>.</p>
+
+<p>This basic issue that instances have unique identities but primitives withthe same contents have the same identities&#x2013;is true of all primitive types, including numbers and booleans: If you create an instance of anything with <code>new</code>, it gets its own identity.</p>
+
+<p>There are more pitfalls to beware. Consider the truthiness of string, number and boolean primitives:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">if</code> <code class="s">''</code> <code class="n">then</code> <code class="s">'truthy'</code> <code class="k">else</code> <code class="s">'falsy'</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'falsy'</code>
+<code class="k">if</code> 0 <code class="n">then</code> <code class="s">'truthy'</code> <code class="k">else</code> <code class="s">'falsy'</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'falsy'</code>
+<code class="k">if</code> <code class="n">false</code> <code class="n">then</code> <code class="s">'truthy'</code> <code class="k">else</code> <code class="s">'falsy'</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'falsy'</code>
+</pre></div>
+
+</div>
+
+<p>Compare this to their corresponding instances:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">if</code> <code class="n">new</code> <code class="n">String</code><code class="p">(</code><code class="s">''</code><code class="p">)</code> <code class="n">then</code> <code class="s">'truthy'</code> <code class="k">else</code> <code class="s">'falsy'</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'truthy'</code>
+<code class="k">if</code> <code class="n">new</code> <code class="n">Number</code><code class="p">(</code>0<code class="p">)</code> <code class="n">then</code> <code class="s">'truthy'</code> <code class="k">else</code> <code class="s">'falsy'</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'truthy'</code>
+<code class="k">if</code> <code class="n">new</code> <code class="n">Boolean</code><code class="p">(</code><code class="n">false</code><code class="p">)</code> <code class="n">then</code> <code class="s">'truthy'</code> <code class="k">else</code> <code class="s">'falsy'</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'truthy'</code>
+</pre></div>
+
+</div>
+
+<p>Our notion of &#x201C;truthiness&#x201D; and &#x201C;falsiness&#x201D; is that all instances are truthy, even string, number, and boolean instances corresponding to primitives that are falsy.</p>
+
+<p>There is one sure cure for &#x201C;CoffeeScript Impostor Syndrome.&#x201D; Just as <code>new PrimitiveType(...)</code> creates an instance that is an impostor of a primitive, <code>PrimitiveType(...)</code> creates an original, canonicalized primitive from a primitive or an instance of a primitive object.</p>
+
+<p>For example:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">String</code><code class="p">(</code><code class="n">new</code> <code class="n">String</code><code class="p">(</code>"<code class="n">Spence</code> <code class="n">Olham</code>"<code class="p">))</code> <code class="n">is</code> "<code class="n">Spence</code> <code class="n">Olham</code>"
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Getting clever, we can write this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">original</code> <code class="p">=</code> <code class="p">(</code><code class="n">unknown</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">unknown</code><code class="p">.</code><code class="n">constructor</code><code class="p">(</code><code class="n">unknown</code><code class="p">)</code>
+    
+<code class="n">original</code><code class="p">(</code><code class="n">true</code><code class="p">)</code> <code class="n">is</code> <code class="n">true</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+<code class="n">original</code><code class="p">(</code><code class="n">new</code> <code class="n">Boolean</code><code class="p">(</code><code class="n">true</code><code class="p">)</code> <code class="n">is</code> <code class="n">true</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Of course, <code>original</code> will not work for your own creations unless you take great care to emulate the same behaviour. But it does work for strings, numbers, and booleans.</p>
+
+<div class="page-break"></div>
+<h3 id="a-touch-of-class">A Touch of Class</h3>
+
+<p>CoffeeScript has &#x201C;classes,&#x201D; for some definition of &#x201C;class.&#x201D; You&#x2019;ve met them already, they&#x2019;re constructors that are designed to work with the <code>new</code> keyword and have behaviour in their <code>.prototype</code> element. You can create one any time you like by:</p>
+
+<ol><li>Writing the constructor so that it performs any initialization on <code>this</code>, and:</li>
+  <li>Putting all of the method definitions in its prototype.</li>
+</ol><p>This is simple enough, but there are some advantages to making it even simpler, so CoffeeScript does. Here&#x2019;s our queue again:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Queue</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">extend</code><code class="p">(</code><code class="n">this</code><code class="p">,</code>
+      <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+      <code class="n">head</code><code class="p">:</code> 0
+      <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+    <code class="p">)</code>
+  <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+  <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+        <code class="n">value</code>
+  <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="n">this</code><code class="p">.</code><code class="n">head</code>
+    
+<code class="n">q</code> <code class="p">=</code> <code class="n">new</code> <code class="n">Queue</code><code class="p">()</code>
+<code class="n">q</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="s">'hello'</code><code class="p">)</code>
+<code class="n">q</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="s">'CoffeeScript'</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Behind the scenes, CoffeeScript acts as if you&#x2019;d written things out by hand, with several small but relevant details.</p>
+
+<h4 id="the-constructor-method">the constructor method</h4>
+
+<p>As you&#x2019;ve probably noticed, CoffeeScript turns what may look like a <code>constructor</code> method into the body of the <code>Queue</code> function. You recall that every object in CoffeeScript has a <code>constructor</code> element initialized to the function that created it. So it&#x2019;s natural that in the class statement, you use <code>constructor</code> to define the body of the function.</p>
+
+<h4 id="scope">scope</h4>
+
+<p>CoffeeScript wraps the entire class statement in a <code>do -&gt;</code> so that you can work with some normal case variables if you need them.</p>
+
+<p>Here&#x2019;s a gratuitous example:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Queue</code>
+  <code class="n">empty</code> <code class="p">=</code> <code class="s">'UNUSED'</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">extend</code><code class="p">(</code><code class="n">this</code><code class="p">,</code>
+      <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+      <code class="n">head</code><code class="p">:</code> 0
+      <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+    <code class="p">)</code>
+  <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+  <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">empty</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+        <code class="n">value</code>
+  <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="n">this</code><code class="p">.</code><code class="n">head</code>
+</pre></div>
+
+</div>
+
+<p>The value <code>'UNUSED'</code> is bound to the name <code>empty</code> within the class &#x201C;statement&#x201D; but not outside it (unless you are aliasing an <code>empty</code> variable). CoffeeScript allows this kind of thing but will get hissy if you try to get fancy and write something like:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Queue</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">empty</code> <code class="p">=</code> <code class="s">'UNUSED'</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+      <code class="n">extend</code><code class="p">(</code><code class="n">this</code><code class="p">,</code>
+        <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+        <code class="n">head</code><code class="p">:</code> 0
+        <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+      <code class="p">)</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>That won&#x2019;t work, you can&#x2019;t wrap a <code>do</code> around the instance methods of the class.</p>
+
+<h4 id="at-at-walkers">at-at walkers</h4>
+
+<p>CoffeeScript, in what may be an homage to Ruby, provides an abbreviation for <code>this.</code>, you can preface any label with an <code>@</code> as a shortcut. This small detail could easily be ignored, except for the fact that there&#x2019;s one place where it&#x2019;s mandatory. With that teaser in place, let&#x2019;s discuss a use case.</p>
+
+<p>Let&#x2019;s modify our Queue to count how many queues have been created:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Queue</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">Queue</code><code class="p">.</code><code class="n">queues</code> <code class="o">+</code><code class="p">=</code> 1
+    <code class="n">extend</code><code class="p">(</code><code class="n">this</code><code class="p">,</code>
+      <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+      <code class="n">head</code><code class="p">:</code> 0
+      <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+    <code class="p">)</code>
+  # <code class="p">...</code>
+
+<code class="n">Queue</code><code class="p">.</code><code class="n">queues</code> <code class="p">=</code> 0
+</pre></div>
+
+</div>
+
+<p>To make this work properly, CoffeeScript has to wrap our code in a <code>do</code> so that the code in the constructor <em>always</em> refers to the correct function, even if we subsequently change the binding for <code>Queue</code> in the outer environment. CoffeeScript does this.</p>
+
+<p>Assigning values to elements of the function outside of the <code>class</code> statement is awkward, so CoffeeScript lets us put <code>Queue.queues = 0</code> inside, anywhere we&#x2019;d like. The top is fine. But interestingly, CoffeeScript also sets the context of the body of the <code>class</code> statement to be the class itself. So we can write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Queue</code>
+  <code class="n">this</code><code class="p">.</code><code class="n">queues</code> <code class="p">=</code> 0
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">Queue</code><code class="p">.</code><code class="n">queues</code> <code class="o">+</code><code class="p">=</code> 1
+    <code class="n">extend</code><code class="p">(</code><code class="n">this</code><code class="p">,</code>
+      <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+      <code class="n">head</code><code class="p">:</code> 0
+      <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+    <code class="p">)</code>
+  # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>And back to our shortcut. We can also write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Queue</code>
+  <code class="p">@</code><code class="n">queues</code> <code class="p">=</code> 0
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">Queue</code><code class="p">.</code><code class="n">queues</code> <code class="o">+</code><code class="p">=</code> 1
+    <code class="n">extend</code><code class="p">(</code><code class="n">this</code><code class="p">,</code>
+      <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+      <code class="n">head</code><code class="p">:</code> 0
+      <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+    <code class="p">)</code>
+  <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+  <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="p">@</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">head</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+        <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="p">@</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+        <code class="n">value</code>
+  <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="p">@</code><code class="n">head</code>
+</pre></div>
+
+</div>
+
+<p>Everything up to now has been a matter of taste. But should you wish, you can write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Queue</code>
+  <code class="p">@</code><code class="n">queues</code><code class="p">:</code> 0
+  # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>Putting the <code>@</code> prefix (and not <code>this.</code>) on a label as part of the structure inside the class statement indicates that the element belongs to the constructor (or &#x201C;class&#x201D;) and not the prototype. Obviously, if you put functions in the constructor, you get constructor methods and not instance methods. For example:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Queue</code>
+  <code class="p">@</code><code class="n">queues</code><code class="p">:</code> 0
+  <code class="p">@</code><code class="n">resetQueues</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">queues</code> <code class="p">=</code> 0
+  # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>We&#x2019;ve added a constructor method to reset the count.</p>
+
+<div class="image-with-caption">
+  <p><img src="images/types.jpg" alt="It seems there is Strong Typing in Coffeeland" /></p><p>It seems there is Strong Typing in Coffeeland</p>
+</div>
+
+<div class="tip sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" /><strong>Classes</strong></p>
+
+  <p>CoffeeScript&#x2019;s <code>class</code> statement is a nice syntactic convenience over manually wiring everything up, and it may help avoid errors. Since most CoffeeScript programmers will use &#x201C;classes,&#x201D; it&#x2019;s wise to use the class statement when the underlying semantics are what you want. That way your code will communicate its intent clearly and be a little more resistant to small errors.</p>
+
+  <hr /></div>
+
+<div class="page-break"></div>
+<h3 id="object-methods">Object Methods</h3>
+
+<p>An <em>instance method</em> is a function defined in the constructor&#x2019;s prototype. Every instance acquires this behaviour unless otherwise &#x201C;overridden.&#x201D; Instance methods usually have some interaction with the instance, such as references to <code>this</code> or to other methods that interact with the instance. A <em>constructor method</em> is a function belonging to the constructor itself.</p>
+
+<p>There is a third kind of method, one that any object (obviously including all instances) can have. An <em>object method</em> is a function defined in the object itself. Object methods usually have some interaction with the object, such as references to <code>this</code> or to other methods that interact with the object.</p>
+
+<p>Object methods are really easy to create with Plain Old CoffeeScript Objects, because they&#x2019;re the only kind of method you can use. Recall from <a href="chap04.html#this">This and That</a>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">QueueMaker</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+  <code class="n">head</code><code class="p">:</code> 0
+  <code class="n">tail</code><code class="p">:</code> <code class="o">-</code>1
+  <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+  <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="n">this</code><code class="p">.</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">this</code><code class="p">.</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="n">this</code><code class="p">.</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+        <code class="n">value</code>
+  <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">.</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="n">this</code><code class="p">.</code><code class="n">head</code>
+</pre></div>
+
+</div>
+
+<p><code>pushTail</code>, <code>pullHead</code>, and <code>isEmpty</code> are object methods. Also, from <a href="chap04.html#hiding-state">encapsulation</a>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">stack</code> <code class="p">=</code> <code class="n">do</code> <code class="p">(</code><code class="n">obj</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">obj</code> <code class="p">=</code>
+    <code class="n">array</code><code class="p">:</code> <code class="p">[]</code>
+    <code class="n">index</code><code class="p">:</code> <code class="o">-</code>1
+    <code class="n">push</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+      <code class="n">obj</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">obj</code><code class="p">.</code><code class="n">index</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+    <code class="n">pop</code><code class="p">:</code> <code class="o">-&gt;</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="n">obj</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">obj</code><code class="p">.</code><code class="n">index</code><code class="p">])</code> <code class="o">-&gt;</code>
+        <code class="n">obj</code><code class="p">.</code><code class="n">array</code><code class="p">[</code><code class="n">obj</code><code class="p">.</code><code class="n">index</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="n">obj</code><code class="p">.</code><code class="n">index</code> <code class="o">-</code><code class="p">=</code> 1 <code class="k">if</code> <code class="n">obj</code><code class="p">.</code><code class="n">index</code> <code class="o">&gt;</code><code class="p">=</code> 0
+        <code class="n">value</code>
+    <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+</pre></div>
+
+</div>
+
+<p>Although they don&#x2019;t refer to the object, <code>push</code>, <code>pop</code>, and <code>isEmpty</code> semantically interact with the opaque data structure represented by the object, so they are object methods too.</p>
+
+<h4 id="object-methods-within-instances">object methods within instances</h4>
+
+<p>Instances of constructors can have object methods as well. Typically, object methods are added in the constructor. Here&#x2019;s a gratuitous example, a widget model that has a read-only <code>id</code>. We&#x2019;re using the class statement, but it could just as easily be rolled by hand:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">WidgetModel</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="p">(</code><code class="n">id</code><code class="p">,</code> <code class="n">attrs</code> <code class="p">=</code> <code class="p">{})</code> <code class="o">-&gt;</code>
+    <code class="n">this</code><code class="p">[</code><code class="n">key</code><code class="p">]</code> <code class="p">=</code> <code class="n">value</code> <code class="k">for</code> <code class="n">key</code><code class="p">,</code> <code class="n">value</code> <code class="n">of</code> <code class="n">own</code> <code class="n">attrs</code>
+    <code class="p">@</code><code class="n">id</code> <code class="p">=</code> <code class="o">-&gt;</code>
+      <code class="n">id</code>
+    <code class="n">this</code>
+  <code class="n">set</code><code class="p">:</code> <code class="p">(</code><code class="n">attrs</code><code class="p">)</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+  <code class="n">get</code><code class="p">:</code> <code class="p">(</code><code class="n">key</code><code class="p">)</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+  <code class="n">has</code><code class="p">:</code> <code class="p">(</code><code class="n">key</code><code class="p">)</code> <code class="o">-&gt;</code>
+    # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p><code>set</code>, <code>get</code>, and <code>has</code> are instance methods, but <code>id</code> is an object method: Each object has its own <code>id</code> closure, where <code>id</code> is bound to the id of the widget by the argument <code>id</code> in the constructor. The advantage of this approach is that instances can have different object methods, or object methods with their own closures as in this case. The disadvantage is that every object has its own methods, which uses up much more memory than instance methods, which are shared amongst all instances.</p>
+
+<div class="page-break"></div>
+<h3 id="canonicalization">Canonicalization</h3>
+
+<p>Early in this book, we discussed how objects, arrays, and functions are <em>reference types</em>. When we create a new object, even if it has the same contents as some other object, it is a different value, as we can tell when we test its identity with <code>is</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="p">{</code> <code class="n">foo</code><code class="p">:</code> <code class="s">'bar'</code> <code class="p">}</code> <code class="n">is</code> <code class="p">{</code> <code class="n">foo</code><code class="p">:</code> <code class="s">'bar'</code> <code class="p">}</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>Sometimes, this is not what you want. A non-trivial example is the <a href="https://en.wikipedia.org/wiki/Hashlife">HashLife</a> algorithm for computing the future of Conway&#x2019;s Game of Life. HashLife aggressively caches both patterns on the board and their futures, so that instead of iteratively simulating the cellular automaton a generation at a time, it executes in logarithmic time.</p>
+
+<p>In order to take advantage of cached results, HashLife must <em>canonicalize</em> square patterns. Meaning, it must guarantee that if two square patterns have the same contents, they must be the same object and share the same identity. This ensures that updates are shared everywhere.</p>
+
+<p>One way to make this work is to eschew having all the code create new objects with a constructor. Instead, the construction of new objects is delegated to a cache. When a function needs a new object, it asks the cache for it. If a matching object already exists, it is returned. If not, a new one is created and placed in the cache.</p>
+
+<p>This is the algorithm used by <a href="http://recursiveuniver.se">recursiveuniver.se</a>, an experimental implementation of HashLife in CoffeeScript. The fully annotated source code for canonicalization is <a href="http://recursiveuniver.se/docs/canonicalization.html">online</a>, and it contains this method for the <code>Square.cache</code> object:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="k">for</code><code class="p">:</code> <code class="p">(</code><code class="n">quadrants</code><code class="p">,</code> <code class="n">creator</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">found</code> <code class="p">=</code> <code class="n">Square</code><code class="p">.</code><code class="n">cache</code><code class="p">.</code><code class="nb">find</code><code class="p">(</code><code class="n">quadrants</code><code class="p">)</code>
+  <code class="k">if</code> <code class="n">found</code>
+    <code class="n">found</code>
+  <code class="k">else</code>
+    <code class="p">{</code><code class="n">nw</code><code class="p">,</code> <code class="n">ne</code><code class="p">,</code> <code class="n">se</code><code class="p">,</code> <code class="n">sw</code><code class="p">}</code> <code class="p">=</code> <code class="n">quadrants</code>
+    <code class="n">Square</code><code class="p">.</code><code class="n">cache</code><code class="p">.</code><code class="n">add</code> <code class="n">_for</code><code class="p">(</code><code class="n">quadrants</code><code class="p">,</code> <code class="n">creator</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Instead of enjoying a stimulating digression explaining how that works, let&#x2019;s make our own. We&#x2019;re going to build a class for cards in a traditional deck. Without canonicalization, it looks like this:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Card</code>
+  <code class="n">ranks</code> <code class="p">=</code> <code class="p">[</code>2<code class="p">..</code>10<code class="p">].</code><code class="n">concat</code> <code class="p">[</code><code class="s">'J'</code><code class="p">,</code> <code class="s">'Q'</code><code class="p">,</code> <code class="s">'K'</code><code class="p">,</code> <code class="s">'A'</code><code class="p">]</code>
+  <code class="n">suits</code> <code class="p">=</code> <code class="p">[</code><code class="s">'C'</code><code class="p">,</code> <code class="s">'D'</code><code class="p">,</code> <code class="s">'H'</code><code class="p">,</code> <code class="s">'S'</code><code class="p">]</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="p">({@</code><code class="n">rank</code><code class="p">,</code> <code class="p">@</code><code class="n">suit</code><code class="p">})</code> <code class="o">-&gt;</code>
+    <code class="n">throw</code> "#<code class="p">{@</code><code class="n">rank</code><code class="p">}</code> <code class="n">is</code> <code class="n">a</code> <code class="n">bad</code> <code class="n">rank</code>" <code class="n">unless</code> <code class="p">@</code><code class="n">rank</code> <code class="n">in</code> <code class="n">ranks</code>
+    <code class="n">throw</code> "#<code class="p">{@</code><code class="n">suit</code><code class="p">}</code> <code class="n">is</code> <code class="n">a</code> <code class="n">bad</code> <code class="n">suit</code>" <code class="n">unless</code> <code class="p">@</code><code class="n">suit</code> <code class="n">in</code> <code class="n">suits</code>
+  <code class="n">toString</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="s">''</code> <code class="o">+</code> <code class="p">@</code><code class="n">rank</code> <code class="o">+</code> <code class="p">@</code><code class="n">suit</code>
+</pre></div>
+
+</div>
+
+<p>The instances are not canonicalized:</p>
+
+<div class="code-block">
+<div class="highlight"><pre> <code class="n">new</code> <code class="n">Card</code><code class="p">({</code><code class="n">rank</code><code class="p">:</code> 4<code class="p">,</code> <code class="n">suit</code><code class="p">:</code> <code class="s">'S'</code><code class="p">})</code> <code class="n">is</code> <code class="n">new</code> <code class="n">Card</code><code class="p">({</code><code class="n">rank</code><code class="p">:</code> 4<code class="p">,</code> <code class="n">suit</code><code class="p">:</code> <code class="s">'S'</code><code class="p">})</code>
+   #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>Nota Bene:</p>
+
+<div class="tip sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" />If a constructor function explicitly returns a value, that&#x2019;s what is returned. Otherwise, the newly constructed object is returned. Unlike other functions and methods, the last evaluated value is not returned by default.</p>
+
+  <hr /></div>
+
+<p>We can take advantage of that to canonicalize cards:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Card</code>
+  <code class="n">ranks</code> <code class="p">=</code> <code class="p">[</code>2<code class="p">..</code>10<code class="p">].</code><code class="n">concat</code> <code class="p">[</code><code class="s">'J'</code><code class="p">,</code> <code class="s">'Q'</code><code class="p">,</code> <code class="s">'K'</code><code class="p">,</code> <code class="s">'A'</code><code class="p">]</code>
+  <code class="n">suits</code> <code class="p">=</code> <code class="p">[</code><code class="s">'C'</code><code class="p">,</code> <code class="s">'D'</code><code class="p">,</code> <code class="s">'H'</code><code class="p">,</code> <code class="s">'S'</code><code class="p">]</code>
+  <code class="n">cache</code> <code class="p">=</code> <code class="p">{}</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="p">({@</code><code class="n">rank</code><code class="p">,</code> <code class="p">@</code><code class="n">suit</code><code class="p">})</code> <code class="o">-&gt;</code>
+    <code class="n">throw</code> "#<code class="p">{@</code><code class="n">rank</code><code class="p">}</code> <code class="n">is</code> <code class="n">a</code> <code class="n">bad</code> <code class="n">rank</code>" <code class="n">unless</code> <code class="p">@</code><code class="n">rank</code> <code class="n">in</code> <code class="n">ranks</code>
+    <code class="n">throw</code> "#<code class="p">{@</code><code class="n">suit</code><code class="p">}</code> <code class="n">is</code> <code class="n">a</code> <code class="n">bad</code> <code class="n">suit</code>" <code class="n">unless</code> <code class="p">@</code><code class="n">suit</code> <code class="n">in</code> <code class="n">suits</code>
+    <code class="k">return</code> <code class="n">cache</code><code class="p">[@</code><code class="n">toString</code><code class="p">()]</code> <code class="n">or</code><code class="p">=</code> <code class="n">this</code>
+  <code class="n">toString</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="s">''</code> <code class="o">+</code> <code class="p">@</code><code class="n">rank</code> <code class="o">+</code> <code class="p">@</code><code class="n">suit</code>
+</pre></div>
+
+</div>
+
+<p>Now the instances are canonicalized:</p>
+
+<div class="code-block">
+<div class="highlight"><pre> <code class="n">new</code> <code class="n">Card</code><code class="p">({</code><code class="n">rank</code><code class="p">:</code> 4<code class="p">,</code> <code class="n">suit</code><code class="p">:</code> <code class="s">'S'</code><code class="p">})</code> <code class="n">is</code> <code class="n">new</code> <code class="n">Card</code><code class="p">({</code><code class="n">rank</code><code class="p">:</code> 4<code class="p">,</code> <code class="n">suit</code><code class="p">:</code> <code class="s">'S'</code><code class="p">})</code>
+   #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>Wonderful!</p>
+
+<h4 id="caveats">caveats</h4>
+
+<p>Using techniques like this to canonicalize instances of a class has many drawbacks and takes careful consideration before use. First, while this code illustrates the possibilities inherent in having a constructor return a different object, it is wasteful in that it creates an object only to throw it away if it is already in the cache.</p>
+
+<p>If there are a tractable number of possible instances of a class (such as cards in a deck), it may be more practical to enumerate them all in advance rather than lazily create them, and/or to use a factory method to retried them rather than changing teh behaviour of the constructor.</p>
+
+<p>More serious is that the engine that executes CoffeeScript programs does not support weak references.<sup id="fnref-wr"><a href="chap07.html#fn-wr" rel="footnote">23</a></sup> As a result, if you wish to perform cache eviction for memory management purposes, you will have to implement your own reference management scheme. This may be non-trivial.</p>
+
+<p>If you have many, many possible instances, your cache can end up holding onto what some programmers call <em>zombie objects</em>: Objects that are not in use anywhere in your program except the cache. If they are never accessed again, the memory they take up will never be released for reuse. An early version of the HashLife implementation did not clear objects from the cache. Some computations would consume as much as 700MB of data for the cache before the virtual machine was unable to continue. Most of that memory was consumed by zombie objects.</p>
+
+<p>All that being said, canonicalization is sometimes the appropriate path forward, and even if it isn&#x2019;t, it serves to illustrate the possibilities latent in writing constructors that return objects explicitly.</p>
+
+<div class="page-break"></div>
+<h3 id="this-section-needs-no-title">This Section Needs No Title</h3>
+
+<p>CoffeeScript is fundamentally an object-oriented language in the sense that Alan Kay first described object orientation. His vision was of software constructed from entities that communicate with message passing, with the system being extremely dynamic (what he described as &#x201C;extreme late-binding&#x201D;). However, words and phrases are only useful when both writer and reader share a common understanding, and for many people the words &#x201C;object-oriented&#x201D; carry with them a great deal of baggage related to constructing ontologies of domain entities.</p>
+
+<p>The word &#x201C;Inheritance&#x201D; also means many different things to many different people. Some people take it extremely seriously, tugging thoughtfully on their long white beards as they ponder things like Strict Liskov Equivalence. We will avoid this term as well.</p>
+
+<p>What we <em>will</em> discuss is extension. In <a href="chap05.html#classextension">the next section</a>, we&#x2019;re going to show how functions that create instances can extend each other through their prototypes. Since we just finished looking at the class statement, we&#x2019;ll start by chaining two classes together, and then generalize extension so that you can use it with any two functions that create instances.</p>
+
+<p>We&#x2019;ll finish by looking at the excellent support CoffeeScript provides so that you can accomplish all of this with a single keyword.</p>
+
+<div class="page-break"></div>
+<h3 id="classextension">Extending Classes</h3>
+
+<p>You recall from <a href="chap04.html#extensible">Composition and Extension</a> that we extended a Plain Old CoffeeScript Queue to create a Plain Old CoffeeScript Deque. But what if we have decided to use CoffeeScript&#x2019;s prototypes and class statements instead of Plain Old CoffeeScript Objects? How do we extend a queue into a deque?</p>
+
+<p>Here&#x2019;s our <code>Queue</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Queue</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">array</code> <code class="p">=</code> <code class="p">[]</code>
+    <code class="p">@</code><code class="n">head</code>  <code class="p">=</code> 0
+    <code class="p">@</code><code class="n">tail</code>  <code class="p">=</code> <code class="o">-</code>1
+  <code class="n">pushTail</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+  <code class="n">pullHead</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="p">@</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">head</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+        <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">head</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="p">@</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> 1
+        <code class="n">value</code>
+  <code class="n">isEmpty</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">tail</code> <code class="o">&lt;</code> <code class="p">@</code><code class="n">head</code>
+</pre></div>
+
+</div>
+
+<p>And our <code>Deque</code> before we wire things together:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Deque</code>
+  <code class="nb">size</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">tail</code> <code class="o">-</code> <code class="p">@</code><code class="n">head</code> <code class="o">+</code> 1
+  <code class="n">pullTail</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="p">@</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">tail</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+        <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">tail</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="p">@</code><code class="n">tail</code> <code class="o">-</code><code class="p">=</code> 1
+        <code class="n">value</code>
+  <code class="n">INCREMENT</code> <code class="p">=</code> 4
+  <code class="n">pushHead</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="k">if</code> <code class="p">@</code><code class="n">head</code> <code class="n">is</code> 0
+      <code class="k">for</code> <code class="nb">i</code> <code class="n">in</code> <code class="p">[@</code><code class="n">tail</code><code class="p">..@</code><code class="n">head</code><code class="p">]</code>
+        <code class="p">@</code><code class="n">array</code><code class="p">[</code><code class="nb">i</code> <code class="o">+</code> <code class="n">INCREMENT</code><code class="p">]</code> <code class="p">=</code> <code class="p">@</code><code class="n">array</code><code class="p">[</code><code class="nb">i</code><code class="p">]</code>
+      <code class="p">@</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> <code class="n">INCREMENT</code>
+      <code class="p">@</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> <code class="n">INCREMENT</code>
+    <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">head</code> <code class="o">-</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+</pre></div>
+
+</div>
+
+<p>So what do we want from dequeues?</p>
+
+<ol><li>A <code>Deque</code> function that initializes a deque when invoked with <code>new</code></li>
+  <li><code>Deque.prototype</code> must have all the behaviour of a deque and all the behaviour of a queue.</li>
+</ol><p>Hmmm. So, should we copy everything from <code>Queue.prototype</code> into <code>Deque.prototype</code>? No, there&#x2019;s a better idea. Prototypes are objects, right? Why must they be Plain Old CoffeeScript Objects? Can&#x2019;t a prototype be an <em>instance</em>?</p>
+
+<p>Yes they can. Imagine that <code>Deque.prototype</code> was a proxy for an instance of <code>Queue</code>. It would, of course, have all of a queue&#x2019;s behaviour through <code>Queue.prototype</code>. We don&#x2019;t want it to be an <em>actual</em> instance, mind you. It probably doesn&#x2019;t matter with a queue, but some of the things we might work with might make things awkward if we make random instances. A database connection comes to mind, we may not want to create one just for the convenience of having access to its behaviour.</p>
+
+<p>Here&#x2019;s such a proxy:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">QueueProxy</code> <code class="p">=</code> <code class="o">-&gt;</code>
+
+<code class="n">QueueProxy</code><code class="p">.</code><code class="n">prototype</code> <code class="p">=</code> <code class="n">Queue</code><code class="p">.</code><code class="n">prototype</code>
+</pre></div>
+
+</div>
+
+<p>Our <code>QueueProxy</code> isn&#x2019;t actually a <code>Queue</code>, but its <code>prototype</code> is an alias of <code>Queue.prototype</code>. Thus, it can pick up <code>Queue</code>&#x2019;s behaviour. We want to use it for our <code>Deque</code>&#x2019;s prototype. Let&#x2019;s insert that code in our class:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Deque</code>
+  <code class="n">QueueProxy</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">QueueProxy</code><code class="p">.</code><code class="n">prototype</code> <code class="p">=</code> <code class="n">Queue</code><code class="p">.</code><code class="n">prototype</code>
+  <code class="n">Deque</code><code class="p">.</code><code class="n">prototype</code> <code class="p">=</code> <code class="n">new</code> <code class="n">QueueProxy</code><code class="p">();</code>
+  <code class="nb">size</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">tail</code> <code class="o">-</code> <code class="p">@</code><code class="n">head</code> <code class="o">+</code> 1
+  # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>Before we rush off to try this, we&#x2019;re missing something. How are we going to initialize our deques? We&#x2019;d better call <code>Queue</code>&#x2019;s constructor:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+  <code class="n">Queue</code><code class="p">.</code><code class="n">prototype</code><code class="p">.</code><code class="n">constructor</code><code class="p">.</code><code class="n">call</code><code class="p">(</code><code class="n">this</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>Here&#x2019;s what we have so far:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Deque</code>
+  <code class="n">QueueProxy</code> <code class="p">=</code> <code class="o">-&gt;</code>
+  <code class="n">QueueProxy</code><code class="p">.</code><code class="n">prototype</code> <code class="p">=</code> <code class="n">Queue</code><code class="p">.</code><code class="n">prototype</code>
+  <code class="p">@</code><code class="n">prototype</code> <code class="p">=</code> <code class="n">new</code> <code class="n">QueueProxy</code><code class="p">();</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">Queue</code><code class="p">.</code><code class="n">prototype</code><code class="p">.</code><code class="n">constructor</code><code class="p">.</code><code class="n">call</code><code class="p">(</code><code class="n">this</code><code class="p">)</code>
+  # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>And it seems to work:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">d</code> <code class="p">=</code> <code class="n">new</code> <code class="n">Deque</code><code class="p">()</code>
+<code class="n">d</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="s">'Hello'</code><code class="p">)</code>
+<code class="n">d</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="s">'CoffeeScript'</code><code class="p">)</code>
+<code class="n">d</code><code class="p">.</code><code class="n">pushTail</code><code class="p">(</code><code class="s">'!'</code><code class="p">)</code>
+<code class="n">d</code><code class="p">.</code><code class="n">pullHead</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'Hello'</code>
+<code class="n">d</code><code class="p">.</code><code class="n">pullTail</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'!'</code>
+<code class="n">d</code><code class="p">.</code><code class="n">pullHead</code><code class="p">()</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="s">'CoffeeScript'</code>
+</pre></div>
+
+</div>
+
+<p>Wonderful!</p>
+
+<h4 id="getting-the-constructor-element-right">getting the constructor element right</h4>
+
+<p>How about some of the other things we&#x2019;ve come to expect from instances?</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">d</code><code class="p">.</code><code class="n">constructor</code> <code class="n">is</code> <code class="n">Deque</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">false</code>
+</pre></div>
+
+</div>
+
+<p>Oops! Messing around with Dequeue&#x2019;s prototype broke this important equivalence. Luckily for us, the <code>constructor</code> property is mutable for objects we create. So, let&#x2019;s make a small change to <code>QueueProxy</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Deque</code>
+  <code class="n">QueueProxy</code> <code class="p">=</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">constructor</code> <code class="p">=</code> <code class="n">Deque</code>
+    <code class="n">this</code>
+  <code class="n">QueueProxy</code><code class="p">.</code><code class="n">prototype</code> <code class="p">=</code> <code class="n">Queue</code><code class="p">.</code><code class="n">prototype</code>
+  <code class="p">@</code><code class="n">prototype</code> <code class="p">=</code> <code class="n">new</code> <code class="n">QueueProxy</code><code class="p">();</code>
+  # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>Now it works:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">d</code><code class="p">.</code><code class="n">constructor</code> <code class="n">is</code> <code class="n">Deque</code>
+  #<code class="p">=</code><code class="o">&gt;</code> <code class="n">true</code>
+</pre></div>
+
+</div>
+
+<p>The <code>QueueProxy</code> function now sets the <code>constructor</code> for every instance of a <code>QueueProxy</code> (hopefully just the one we need for the <code>Deque</code> class). It returns the object being created (it could also return <code>undefined</code> and work. But if it carelessly returned something else, that would be assigned to <code>Deque</code>&#x2019;s prototype, which would break our code).</p>
+
+<h4 id="extracting-the-boilerplate">extracting the boilerplate</h4>
+
+<p>Let&#x2019;s turn our extension modifications into a function:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">xtend</code> <code class="p">=</code> <code class="p">(</code><code class="n">child</code><code class="p">,</code> <code class="n">parent</code><code class="p">)</code> <code class="o">-&gt;</code>
+  <code class="n">do</code> <code class="p">(</code><code class="n">proxy</code> <code class="p">=</code> <code class="n">undefined</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="n">proxy</code> <code class="p">=</code> <code class="o">-&gt;</code>
+      <code class="p">@</code><code class="n">constructor</code> <code class="p">=</code> <code class="n">child</code>
+      <code class="n">this</code>
+    <code class="n">proxy</code><code class="p">.</code><code class="n">prototype</code> <code class="p">=</code> <code class="n">parent</code><code class="p">.</code><code class="n">prototype</code>
+    <code class="n">child</code><code class="p">.</code><code class="n">prototype</code> <code class="p">=</code> <code class="n">new</code> <code class="n">proxy</code><code class="p">()</code>
+</pre></div>
+
+</div>
+
+<p>And use it in <code>Deque</code>:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Deque</code>
+  <code class="n">xtend</code><code class="p">(</code><code class="n">Deque</code><code class="p">,</code> <code class="n">Queue</code><code class="p">)</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">Queue</code><code class="p">.</code><code class="n">prototype</code><code class="p">.</code><code class="n">constructor</code><code class="p">.</code><code class="n">call</code><code class="p">(</code><code class="n">this</code><code class="p">)</code>
+  <code class="nb">size</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="p">@</code><code class="n">tail</code> <code class="o">-</code> <code class="p">@</code><code class="n">head</code> <code class="o">+</code> 1
+  <code class="n">pullTail</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">unless</code> <code class="p">@</code><code class="n">isEmpty</code><code class="p">()</code>
+      <code class="n">do</code> <code class="p">(</code><code class="n">value</code> <code class="p">=</code> <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">tail</code><code class="p">])</code> <code class="p">=</code><code class="o">&gt;</code>
+        <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">tail</code><code class="p">]</code> <code class="p">=</code> <code class="n">undefined</code>
+        <code class="p">@</code><code class="n">tail</code> <code class="o">-</code><code class="p">=</code> 1
+        <code class="n">value</code>
+  <code class="n">INCREMENT</code> <code class="p">=</code> 4
+  <code class="n">pushHead</code><code class="p">:</code> <code class="p">(</code><code class="n">value</code><code class="p">)</code> <code class="o">-&gt;</code>
+    <code class="k">if</code> <code class="p">@</code><code class="n">head</code> <code class="n">is</code> 0
+      <code class="k">for</code> <code class="nb">i</code> <code class="n">in</code> <code class="p">[@</code><code class="n">tail</code><code class="p">..@</code><code class="n">head</code><code class="p">]</code>
+        <code class="p">@</code><code class="n">array</code><code class="p">[</code><code class="nb">i</code> <code class="o">+</code> <code class="n">INCREMENT</code><code class="p">]</code> <code class="p">=</code> <code class="p">@</code><code class="n">array</code><code class="p">[</code><code class="nb">i</code><code class="p">]</code>
+      <code class="p">@</code><code class="n">tail</code> <code class="o">+</code><code class="p">=</code> <code class="n">INCREMENT</code>
+      <code class="p">@</code><code class="n">head</code> <code class="o">+</code><code class="p">=</code> <code class="n">INCREMENT</code>
+    <code class="p">@</code><code class="n">array</code><code class="p">[@</code><code class="n">head</code> <code class="o">-</code><code class="p">=</code> 1<code class="p">]</code> <code class="p">=</code> <code class="n">value</code>
+</pre></div>
+
+</div>
+
+<p>N. And you can use <code>xtend</code> even if you don&#x2019;t want to use the class statement:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">A</code> <code class="p">=</code> <code class="o">-&gt;</code>
+<code class="n">B</code> <code class="p">=</code> <code class="o">-&gt;</code>
+<code class="n">xtend</code><code class="p">(</code><code class="n">B</code><code class="p">,</code> <code class="n">A</code><code class="p">)</code>
+</pre></div>
+
+</div>
+
+<p>It&#x2019;s so nice that you wonder it isn&#x2019;t already in CoffeeScript. Behold:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">B</code> <code class="n">extends</code> <code class="n">A</code>
+</pre></div>
+
+</div>
+
+<p>Most helpful! In fact, CoffeeScript&#x2019;s keyword is slightly superior to the <code>xtend</code> function: It provides support for extending functions that have other properties, not just the prototype. </p>
+
+<div class="tip sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" />You should almost always use <code>extends</code> rather than rolling your own code to chain functions and instances. And even if you let CoffeeScript do the work, you should always <em>understand</em> what CoffeeScript is doing for you.</p>
+
+  <hr /></div>
+
+<p>How about the class statement? CoffeeScript does a lot more work for you if you wish. You can write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Deque</code>
+  <code class="n">Deque</code> <code class="n">extends</code> <code class="n">Queue</code>
+  <code class="n">constructor</code><code class="p">:</code> <code class="o">-&gt;</code>
+    <code class="n">Queue</code><code class="p">.</code><code class="n">prototype</code><code class="p">.</code><code class="n">constructor</code><code class="p">.</code><code class="n">call</code><code class="p">(</code><code class="n">this</code><code class="p">)</code>
+  # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<p>But there&#x2019;s more. If you instead write:</p>
+
+<div class="code-block">
+<div class="highlight"><pre><code class="n">class</code> <code class="n">Deque</code> <code class="n">extends</code> <code class="n">Queue</code>
+  # <code class="p">...</code>
+</pre></div>
+
+</div>
+
+<ol><li>CoffeeScript will even more work for you. If you aren&#x2019;t doing any extra setup, you can leave the constructor out. CoffeeScript will handle calling the extended function&#x2019;s constructor for you.</li>
+  <li>If you do wish to do some extra setup, write your own constructor. Like Ruby, you can call <code>super</code> in any method to access the extended version of the same method.</li>
+</ol><div class="tip sidebarish">
+  <hr /><p><img class="sidebar-image" src="images/leanpub_tip.png" alt="tip" />Extending functions that create instances or classes is a logical process of connecting functions and prototypes. There is no special &#x201C;magic&#x201D; outside of the <code>.prototype</code> and <code>.constructor</code> elements of every object.</p>
+
+  <p>CoffeeScript&#x2019;s <code>class</code> and <code>extends</code> keywords handle a lot of the boilerplate and play nicely together. Use them unless you have specific needs they don&#x2019;t cover.</p>
+
+  <hr /></div>
+
+<h3 id="summary-instances-and-classes">Summary: Instances and Classes</h3>
+
+<div class="image-with-caption">
+  <p><img src="images/bezzera.jpg" alt="Here's a nice picture to look at while we prepare this summary" /></p><p>Here's a nice picture to look at while we prepare this summary</p>
+</div>
+
+<h4 id="interlude-2">interlude&#x2026;</h4>
+
+<div class="image-with-caption">
+  <p><img src="images/doppio.jpg" alt="Drawing a Doppio" /></p><p>Drawing a Doppio</p>
+</div>
+
+<p><a href="http://www.coffeegeek.com/opinions/aarondelazzer/02-24-2002" title="Coffeegeek Etiquette &amp; The Ristretto Shot">Aaron De Lazzer</a> on Ristretto:</p>
+
+<blockquote>
+  <p>&#x201C;The ristretto shot of espresso is one of the most fiercely debated and favourite topics amongst the coffee cognoscenti.  It is the purists pour.  The cutting edge of espresso extraction, flying in the face of the &#x201C;Big Gulp&#x201D; coffee drinker like nothing else around.  </p>
+</blockquote>
+
+<blockquote>
+  <p>In anything at all, perfection is finally attained not when there is no longer anything to add, but when there is no longer anything to take away.&#x2013;Antoine de Saint-Exupery</p>
+</blockquote>
+
+<blockquote>
+  <p>&#x201C;Antoine would have drank ristretto shots.  </p>
+</blockquote>
+
+<blockquote>
+  <p>&#x201C;There is no where to hide with a straight unadulterated shot of espresso.  Even more (less?) so with a ristretto shot.  Any weakness in the blend or in the preparation of the coffee will be brought to light here.  Either the heavens open up and the angels sing after that first sip or&#x2026;.something significantly less.  Which is always such a disappointment knowing all the potential distilled into the dribble of coffee liquor that barely coats the bottom of your cup.&#x201D;</p>
+</blockquote>
+</div>
+<div id="leanpub-toc">
+<h2>Table of Contents</h2>
+<ol class="toc">
+<li class="chapter"><a href="chap00.html#a-pull-of-the-lever-prefaces">A Pull of the Lever: Prefaces</a></li>
+<li class="section"><a href="chap00.html#about-this-book">About This Book</a></li>
+<li class="section"><a href="chap00.html#legend">Legend</a></li>
+<li class="chapter"><a href="chap01.html#prelude-values-and-expressions">Prelude: Values and Expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-expressions">values and expressions</a></li>
+<li class="section"><a href="chap01.html#values-and-identity">values and identity</a></li>
+<li class="chapter"><a href="chap02.html#functions">The first sip: Functions</a></li>
+<li class="section"><a href="chap02.html#as-little-as-possible-about-functions-but-no-less">As Little As Possible About Functions, But No Less</a></li>
+<li class="section"><a href="chap02.html#fargs">Ah. I&#x2019;d Like to Have an Argument, Please.<sup id="fnref-mp">
+  <a href="chap07.html#fn-mp" rel="footnote">6</a>
+</sup></a></li>
+<li class="section"><a href="chap02.html#closures">Closures and Scope</a></li>
+<li class="section"><a href="chap02.html#a-simple-question">A Simple Question</a></li>
+<li class="section"><a href="chap02.html#summary-functions">Summary: Functions</a></li>
+<li class="chapter"><a href="chap03.html#more-functions">Slurp: More About Functions and Scope</a></li>
+<li class="section"><a href="chap03.html#let-me-show-you-what-to-do">Let Me Show You What To Do</a></li>
+<li class="section"><a href="chap03.html#making-things-easy">Making Things Easy</a></li>
+<li class="section"><a href="chap03.html#poco">References, Identity, Arrays, and Objects</a></li>
+<li class="section"><a href="chap03.html#summary-more-about-functions-and-scope">Summary: More About Functions And Scope</a></li>
+<li class="chapter"><a href="chap04.html#mutable">Stir the Espresso: Objects, Mutation, and State</a></li>
+<li class="section"><a href="chap04.html#reassignment-and-mutation">Reassignment and Mutation</a></li>
+<li class="section"><a href="chap04.html#normal-case-variables">Normal Case Variables</a></li>
+<li class="section"><a href="chap04.html#comprehensions">Comprehensions</a></li>
+<li class="section"><a href="chap04.html#encapsulation">Encapsulating State with Closures</a></li>
+<li class="section"><a href="chap04.html#composition">Composition and Extension</a></li>
+<li class="section"><a href="chap04.html#this">This and That</a></li>
+<li class="section"><a href="chap04.html#summary-objects-mutation-and-state">Summary: Objects, Mutation, and State</a></li>
+<li class="chapter"><a href="chap05.html#methods">Finish the Cup: Instances and Classes</a></li>
+<li class="section"><a href="chap05.html#prototypes-are-simple-its-the-explanations-that-are-hard-to-understand">Prototypes are Simple, it&#x2019;s the Explanations that are Hard To Understand</a></li>
+<li class="section"><a href="chap05.html#a-touch-of-class">A Touch of Class</a></li>
+<li class="section"><a href="chap05.html#object-methods">Object Methods</a></li>
+<li class="section"><a href="chap05.html#canonicalization">Canonicalization</a></li>
+<li class="section"><a href="chap05.html#this-section-needs-no-title">This Section Needs No Title</a></li>
+<li class="section"><a href="chap05.html#classextension">Extending Classes</a></li>
+<li class="section"><a href="chap05.html#summary-instances-and-classes">Summary: Instances and Classes</a></li>
+<li class="chapter"><a href="chap06.html#extra-shot">An Extra Shot of Ideas</a></li>
+<li class="section"><a href="chap06.html#combinators">Refactoring to Combinators</a></li>
+<li class="section"><a href="chap06.html#method-decorators">Method Decorators</a></li>
+<li class="section"><a href="chap06.html#callbacks-and-promises">Callbacks and Promises</a></li>
+<li class="section"><a href="chap06.html#summary-an-extra-shot-of-ideas">Summary: An Extra Shot of Ideas</a></li>
+<li class="chapter"><a href="chap07.html#a-golden-crema">A Golden Crema</a></li>
+<li class="section"><a href="chap07.html#online">How to run the examples</a></li>
+<li class="section"><a href="chap07.html#thanks">Thanks!</a></li>
+<li class="section"><a href="chap07.html#copyright-notice">Copyright Notice</a></li>
+<li class="section"><a href="chap07.html#about-the-author">About The Author</a></li>
+</ol>
+</div>
+</body>
+</html>
